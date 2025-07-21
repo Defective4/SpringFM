@@ -7,6 +7,7 @@ import java.util.concurrent.Future;
 
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.PacketGenerator;
+import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.AnnotationProcessor;
 import io.github.defective4.springfm.server.processing.TestProcessor;
 import io.github.defective4.springfm.server.util.ThreadUtils;
@@ -18,7 +19,8 @@ public class TestService implements RadioService {
     private Future<?> task;
 
     public TestService(InputStream audioInput, PacketGenerator generator) {
-        processor = new TestProcessor(generator::packetGenerated);
+        processor = new TestProcessor(
+                annotation -> generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation))));
         this.audioInput = new DataInputStream(audioInput);
         this.generator = generator;
     }
