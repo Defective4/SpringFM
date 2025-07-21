@@ -3,16 +3,16 @@ package io.github.defective4.springfm.server.processing;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-import io.github.defective4.springfm.server.data.AnnotationProvider;
+import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.data.AudioAnnotation;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class TestProcessor implements AnnotationProcessor {
-    private final AnnotationProvider provideer;
+    private final AnnotationGenerator generator;
     private Future<?> task;
 
-    public TestProcessor(AnnotationProvider provider) {
-        provideer = provider;
+    public TestProcessor(AnnotationGenerator generator) {
+        this.generator = generator;
     }
 
     @Override
@@ -24,7 +24,7 @@ public class TestProcessor implements AnnotationProcessor {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                provideer.provide(new AudioAnnotation("RMF FM", "Testowy opis"));
+                generator.provide(new AudioAnnotation("RMF FM", "Testowy opis"));
             }
         });
     }
