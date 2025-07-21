@@ -25,7 +25,13 @@ public class TestService implements RadioService {
     }
 
     @Override
+    public boolean isStarted() {
+        return audioInput != null && task != null && !task.isCancelled() && processor != null && processor.isStarted();
+    }
+
+    @Override
     public void start() throws IOException {
+        if (isStarted()) throw new IllegalStateException("Already started");
         processor.start();
         task = ThreadUtils.submit(() -> {
             try {
@@ -44,6 +50,7 @@ public class TestService implements RadioService {
 
     @Override
     public void stop() throws IOException {
+        if (!isStarted()) throw new IllegalStateException("Already stopped");
         audioInput.close();
         task.cancel(true);
         processor.stop();

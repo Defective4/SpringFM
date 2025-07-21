@@ -32,6 +32,7 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
 
     @Override
     public void start() throws IOException {
+        if (isStarted()) throw new IllegalStateException("Already started");
         redsea = new ProcessBuilder("redsea", "-r", sampleRateKHz + "k").start();
         os = redsea.getOutputStream();
         task = ThreadUtils.submit(() -> {
@@ -52,6 +53,7 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
 
     @Override
     public void stop() throws IOException {
+        if (!isStarted()) throw new IllegalStateException("Already stopped");
         task.cancel(true);
         os.close();
         redsea.destroyForcibly();
