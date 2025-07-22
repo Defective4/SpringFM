@@ -6,9 +6,9 @@ public class PacketPayload {
     private final String key;
     private final Object payload;
 
-    protected PacketPayload(Object payload) {
+    protected PacketPayload(String key, Object payload) {
         this.payload = Objects.requireNonNull(payload);
-        key = PayloadRegistry.getKeyForClass(this.getClass());
+        this.key = key;
     }
 
     public String getKey() {
