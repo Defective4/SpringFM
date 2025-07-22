@@ -6,6 +6,8 @@ import io.github.defective4.springfm.server.packet.PacketGenerator;
 
 public interface RadioService {
 
+    String getName();
+
     boolean isStarted();
 
     void setPacketGenerator(PacketGenerator generator);

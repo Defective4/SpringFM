@@ -2,6 +2,7 @@ package io.github.defective4.springfm.backend.web;
 
 import java.io.DataOutputStream;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +14,10 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import io.github.defective4.springfm.backend.exception.ProfileNotFoundException;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
+import io.github.defective4.springfm.server.data.AuthResponse;
+import io.github.defective4.springfm.server.data.ProfileInformation;
+import io.github.defective4.springfm.server.data.ServiceInformation;
+import io.github.defective4.springfm.server.service.RadioService;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
@@ -22,6 +27,19 @@ public class ProfileController {
 
     public ProfileController(Map<String, RadioProfile> profiles) {
         this.profiles = profiles;
+    }
+
+    @GetMapping(path = "/auth")
+    public AuthResponse auth() {
+        return new AuthResponse(profiles.entrySet().stream().map(profile -> new ProfileInformation(profile.getKey(),
+                profile.getValue().getServices().stream().map(new Function<RadioService, ServiceInformation>() {
+                    int index = 0;
+
+                    @Override
+                    public ServiceInformation apply(RadioService svc) {
+                        return new ServiceInformation(index++, svc.getName());
+                    }
+                }).toList())).toList());
     }
 
     @ExceptionHandler(ProfileNotFoundException.class)

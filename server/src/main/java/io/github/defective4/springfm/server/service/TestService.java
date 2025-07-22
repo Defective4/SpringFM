@@ -32,6 +32,11 @@ public class TestService implements RadioService {
     }
 
     @Override
+    public String getName() {
+        return "Test service";
+    }
+
+    @Override
     public boolean isStarted() {
         return audioInput != null && task != null && !task.isCancelled() && processor != null && processor.isStarted();
     }

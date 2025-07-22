@@ -44,6 +44,10 @@ public class RadioProfile {
         startCurrentService();
     }
 
+    public List<RadioService> getServices() {
+        return Collections.unmodifiableList(services);
+    }
+
     public void haltServices() {
         synchronized (services) {
             services.forEach(t -> {
