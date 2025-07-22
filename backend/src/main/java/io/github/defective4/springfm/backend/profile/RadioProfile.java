@@ -2,7 +2,6 @@ package io.github.defective4.springfm.backend.profile;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +18,7 @@ public class RadioProfile {
     public RadioProfile(List<RadioService> services) {
         this.services = Collections.unmodifiableList(services);
         for (RadioService svc : services) svc.setPacketGenerator(new PacketGenerator() {
-            List<OutputStream> toRemove = new ArrayList<>();
+            List<DataOutputStream> toRemove = new ArrayList<>();
 
             @Override
             public void packetGenerated(Packet packet) {
@@ -33,32 +32,50 @@ public class RadioProfile {
                         }
                     }
                 }
-                synchronized (connectedClients) {
-                    toRemove.forEach(connectedClients::remove);
-                }
+                toRemove.forEach(RadioProfile.this::removeClient);
             }
         });
     }
 
-    public void addClient(DataOutputStream os) {
+    public void addClient(DataOutputStream os) throws IOException {
         synchronized (connectedClients) {
             connectedClients.add(os);
         }
+        startCurrentService();
     }
 
-    public void setActiveService(int index) throws IOException {
+    public void haltServices() {
+        synchronized (services) {
+            services.forEach(t -> {
+                try {
+                    if (t.isStarted()) t.stop();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    public void removeClient(DataOutputStream os) {
+        synchronized (connectedClients) {
+            connectedClients.remove(os);
+        }
+        if (connectedClients.isEmpty()) haltServices();
+    }
+
+    public void setActiveService(int index) {
         if (index < -1) throw new IllegalArgumentException("Profile index can't be less than -1");
         if (index >= services.size()) throw new IllegalArgumentException("Profile index is too big");
-        services.forEach(t -> {
-            try {
-                if (t.isStarted()) t.stop();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        if (index >= 0) {
-            services.get(index).start();
-        }
+        haltServices();
         currentService = index;
+    }
+
+    public void startCurrentService() throws IOException {
+        synchronized (services) {
+            if (currentService >= 0) {
+                RadioService service = services.get(currentService);
+                if (!service.isStarted()) service.start();
+            }
+        }
     }
 }
