@@ -6,8 +6,8 @@ import java.util.Objects;
 import com.google.gson.Gson;
 
 public class Packet {
-    private static final byte TYPE_AUDIO = 2;
-    private static final byte TYPE_PAYLOAD = 1;
+    public static final byte TYPE_AUDIO = 2;
+    public static final byte TYPE_PAYLOAD = 1;
 
     private final byte[] payload;
     private final byte type;
