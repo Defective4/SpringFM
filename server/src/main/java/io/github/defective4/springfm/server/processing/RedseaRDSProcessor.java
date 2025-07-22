@@ -18,8 +18,6 @@ import io.github.defective4.springfm.server.util.ThreadUtils;
 public class RedseaRDSProcessor implements AnnotationProcessor {
 
     private final AnnotationGenerator generator;
-    private String lastTitle, lastText;
-
     private OutputStream os;
     private Process redsea;
 
@@ -51,23 +49,16 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
                         if (line == null) break;
                         try {
                             JsonObject root = JsonParser.parseString(line).getAsJsonObject();
-                            boolean changed = false;
+                            String ps = null;
+                            String radiotext = null;
                             if (root.has("ps")) {
-                                String ps = root.get("ps").getAsString();
-                                if (!ps.equals(lastTitle)) {
-                                    lastTitle = ps;
-                                    changed = true;
-                                }
+                                ps = root.get("ps").getAsString();
                             }
                             if (root.has("radiotext")) {
-                                String radiotext = root.get("radiotext").getAsString();
-                                if (!radiotext.equals(lastText)) {
-                                    lastText = radiotext;
-                                    changed = true;
-                                }
+                                radiotext = root.get("radiotext").getAsString();
                             }
-                            if (changed) {
-                                generator.provide(new AudioAnnotation(lastTitle, lastText));
+                            if (ps != null || radiotext != null) {
+                                generator.provide(new AudioAnnotation(ps, radiotext));
                             }
                         } catch (Exception e) {}
                     }
