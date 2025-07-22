@@ -24,18 +24,18 @@ public class Packet {
         type = TYPE_PAYLOAD;
     }
 
-    public void toStream(DataOutputStream output) throws IOException {
-        output.writeInt(payload.length);
-        output.writeByte(type);
-        output.write(payload);
-    }
-
     public byte[] getPayload() {
         return payload;
     }
 
     public byte getType() {
         return type;
+    }
+
+    public void toStream(DataOutputStream output) throws IOException {
+        output.writeInt(payload.length);
+        output.writeByte(type);
+        output.write(payload);
     }
 
 }

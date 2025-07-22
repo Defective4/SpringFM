@@ -10,9 +10,9 @@
     <artifactId>server</artifactId>
     <dependencies>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.12.1</version>
+            <groupId>io.github.defective4.radio</groupId>
+            <artifactId>commons</artifactId>
+            <version>0.1</version>
         </dependency>
     </dependencies>
 </project>

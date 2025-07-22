@@ -8,7 +8,7 @@ import io.github.defective4.springfm.server.packet.PacketPayload;
 public class AudioAnnotationPayload extends PacketPayload {
 
     public AudioAnnotationPayload(AudioAnnotation annotation) {
-        super(Objects.requireNonNull(annotation));
+        super("annotation", Objects.requireNonNull(annotation));
     }
 
 }
