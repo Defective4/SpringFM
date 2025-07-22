@@ -1,5 +1,6 @@
 package io.github.defective4.springfm.backend.web;
 
+import java.io.DataOutputStream;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class ProfileController {
         if (prof == null) throw new ProfileNotFoundException(profile);
         resp.setContentType("application/octet-stream");
         return out -> {
-            prof.addClient(out);
+            prof.addClient(new DataOutputStream(out));
             Object obj = new Object();
             synchronized (obj) {
                 try {
