@@ -1,7 +1,6 @@
 package io.github.defective4.springfm.backend.config;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import io.github.defective4.springfm.server.service.TestService;
 public class RadioConfiguration {
 
     @Bean
-    Map<String, RadioProfile> getAvailableProfiles() throws IOException {
+    Map<String, RadioProfile> getAvailableProfiles() {
         RadioProfile def = new RadioProfile(List.of(new TestService(new File("wbfm.wav"))));
         def.setActiveService(0);
         return Map.of("default", def);
