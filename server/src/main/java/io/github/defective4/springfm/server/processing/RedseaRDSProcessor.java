@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.Future;
 
 import com.google.gson.JsonObject;
@@ -27,7 +28,7 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
     private Future<?> task;
 
     public RedseaRDSProcessor(AnnotationGenerator generator, int sampleRateKHz) {
-        this.generator = generator;
+        this.generator = Objects.requireNonNull(generator);
         this.sampleRateKHz = sampleRateKHz;
     }
 

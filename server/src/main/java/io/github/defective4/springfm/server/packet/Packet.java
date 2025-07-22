@@ -1,6 +1,7 @@
 package io.github.defective4.springfm.server.packet;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import com.google.gson.Gson;
 
@@ -12,13 +13,13 @@ public class Packet {
     private final byte type;
 
     public Packet(byte[] audioSample) {
+        payload = Objects.requireNonNull(audioSample);
         type = TYPE_AUDIO;
-        payload = audioSample;
     }
 
     public Packet(PacketPayload payload) {
+        this.payload = new Gson().toJson(Objects.requireNonNull(payload)).getBytes(StandardCharsets.UTF_8);
         type = TYPE_PAYLOAD;
-        this.payload = new Gson().toJson(payload).getBytes(StandardCharsets.UTF_8);
     }
 
     public byte[] getPayload() {
