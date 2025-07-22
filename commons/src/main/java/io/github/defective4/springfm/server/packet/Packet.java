@@ -1,5 +1,6 @@
 package io.github.defective4.springfm.server.packet;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,11 @@ public class Packet {
         type = TYPE_PAYLOAD;
     }
 
+    private Packet(byte[] payload, byte type) {
+        this.payload = payload;
+        this.type = type;
+    }
+
     public byte[] getPayload() {
         return payload;
     }
@@ -36,6 +42,16 @@ public class Packet {
         output.writeInt(payload.length);
         output.writeByte(type);
         output.write(payload);
+    }
+
+    public static Packet fromStream(DataInputStream in) throws IOException {
+        int len = in.readInt();
+        if (len < 0) throw new IOException("Received invalid packet length: " + len);
+        byte type = in.readByte();
+        if (type < 1 || type > 2) throw new IOException("Received invalid packed ID: 0x" + Integer.toHexString(type));
+        byte[] payload = new byte[len];
+        in.readFully(payload);
+        return new Packet(payload, type);
     }
 
 }
