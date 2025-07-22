@@ -1,6 +1,7 @@
 package io.github.defective4.springfm.backend.web;
 
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -8,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -42,6 +45,19 @@ public class ProfileController {
                 }).toList())).toList());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String illegalArgument(IllegalArgumentException e) {
+        return e.getMessage();
+    }
+
+    @ExceptionHandler(IOException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String illegalArgument(IOException e) {
+        e.printStackTrace();
+        return "There was an error on the server side";
+    }
+
     @ExceptionHandler(ProfileNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String profileNotFound(ProfileNotFoundException e) {
@@ -62,5 +78,18 @@ public class ProfileController {
                 } catch (InterruptedException e) {}
             }
         };
+    }
+
+    @PostMapping(path = "/profile/{profile}/service")
+    public String setService(@PathVariable String profile, @RequestParam int index) throws IOException {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+        if (prof.getCurrentService() == index) {
+            return "Not changed";
+        }
+        prof.setActiveService(index);
+        prof.haltServices();
+        prof.startCurrentService();
+        return "Ok";
     }
 }

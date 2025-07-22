@@ -19,21 +19,23 @@ public class TestService implements RadioService {
     private PacketGenerator generator;
     private final File input;
     private final RateLimiter limiter = new RateLimiter(171000 * 2);
+    private final String name;
     private final RedseaRDSProcessor processor;
     private Future<?> task;
 
-    public TestService(File input) {
+    public TestService(File input, String name) {
         processor = new RedseaRDSProcessor(annotation -> {
             if (generator != null) synchronized (generator) {
                 generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
             }
         }, 171);
         this.input = input;
+        this.name = name;
     }
 
     @Override
     public String getName() {
-        return "Test service";
+        return name;
     }
 
     @Override

@@ -44,6 +44,10 @@ public class RadioProfile {
         startCurrentService();
     }
 
+    public int getCurrentService() {
+        return currentService;
+    }
+
     public List<RadioService> getServices() {
         return Collections.unmodifiableList(services);
     }
@@ -70,7 +74,6 @@ public class RadioProfile {
     public void setActiveService(int index) {
         if (index < -1) throw new IllegalArgumentException("Profile index can't be less than -1");
         if (index >= services.size()) throw new IllegalArgumentException("Profile index is too big");
-        haltServices();
         currentService = index;
     }
 

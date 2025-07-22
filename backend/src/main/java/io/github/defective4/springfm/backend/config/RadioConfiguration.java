@@ -15,8 +15,8 @@ public class RadioConfiguration {
 
     @Bean
     Map<String, RadioProfile> getAvailableProfiles() {
-        RadioProfile def = new RadioProfile(List.of(new TestService(new File("wbfm.wav"))));
-        def.setActiveService(0);
+        RadioProfile def = new RadioProfile(List.of(new TestService(new File("wbfm.wav"), "RMF FM"),
+                new TestService(new File("wbfm2.wav"), "Jedynka")));
         return Map.of("default", def);
     }
 }
