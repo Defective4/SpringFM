@@ -1,5 +1,7 @@
 package io.github.defective4.springfm.server.packet;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
@@ -20,6 +22,12 @@ public class Packet {
     public Packet(PacketPayload payload) {
         this.payload = new Gson().toJson(Objects.requireNonNull(payload)).getBytes(StandardCharsets.UTF_8);
         type = TYPE_PAYLOAD;
+    }
+
+    public void toStream(DataOutputStream output) throws IOException {
+        output.writeInt(payload.length);
+        output.writeByte(type);
+        output.write(payload);
     }
 
     public byte[] getPayload() {

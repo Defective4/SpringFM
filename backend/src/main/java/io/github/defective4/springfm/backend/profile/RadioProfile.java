@@ -1,5 +1,6 @@
 package io.github.defective4.springfm.backend.profile;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -11,7 +12,7 @@ import io.github.defective4.springfm.server.packet.PacketGenerator;
 import io.github.defective4.springfm.server.service.RadioService;
 
 public class RadioProfile {
-    private final List<OutputStream> connectedClients = new ArrayList<>();
+    private final List<DataOutputStream> connectedClients = new ArrayList<>();
     private int currentService = -1;
     private final List<RadioService> services;
 
@@ -23,14 +24,12 @@ public class RadioProfile {
             @Override
             public void packetGenerated(Packet packet) {
                 toRemove.clear();
-                if (packet.getType() == Packet.TYPE_AUDIO) {
-                    synchronized (connectedClients) {
-                        for (OutputStream os : connectedClients) {
-                            try {
-                                os.write(packet.getPayload());
-                            } catch (Exception e) {
-                                toRemove.add(os);
-                            }
+                synchronized (connectedClients) {
+                    for (DataOutputStream os : connectedClients) {
+                        try {
+                            packet.toStream(os);
+                        } catch (Exception e) {
+                            toRemove.add(os);
                         }
                     }
                 }
@@ -41,7 +40,7 @@ public class RadioProfile {
         });
     }
 
-    public void addClient(OutputStream os) {
+    public void addClient(DataOutputStream os) {
         synchronized (connectedClients) {
             connectedClients.add(os);
         }
