@@ -23,5 +23,6 @@
     </build>
     <modules>
     	<module>server</module>
+    	<module>backend</module>
     </modules>
 </project>
