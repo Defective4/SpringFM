@@ -1,6 +1,6 @@
 package io.github.defective4.springfm.server.service;
 
-import java.io.DataInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Future;
@@ -13,16 +13,17 @@ import io.github.defective4.springfm.server.util.RateLimiter;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class TestService implements RadioService {
-    private final DataInputStream audioInput;
+    private final InputStream audioInput;
     private final PacketGenerator generator;
+    private final RateLimiter limiter = new RateLimiter(171000 * 2);
     private final RedseaRDSProcessor processor;
     private Future<?> task;
-    private final RateLimiter limiter = new RateLimiter(171000 * 2);
 
     public TestService(InputStream audioInput, PacketGenerator generator) {
         processor = new RedseaRDSProcessor(
                 annotation -> generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation))), 171);
-        this.audioInput = new DataInputStream(audioInput);
+        this.audioInput = new BufferedInputStream(audioInput);
+        this.audioInput.mark(Integer.MAX_VALUE);
         this.generator = generator;
     }
 
@@ -40,7 +41,10 @@ public class TestService implements RadioService {
                 byte[] buffer = new byte[4096];
                 while (true) {
                     int read = audioInput.read(buffer);
-                    if (read <= 0) break;
+                    if (read <= 0) {
+                        audioInput.reset();
+                        continue;
+                    }
                     limiter.limit(read);
                     processor.writeData(buffer, read);
                     generator.packetGenerated(new Packet(buffer));

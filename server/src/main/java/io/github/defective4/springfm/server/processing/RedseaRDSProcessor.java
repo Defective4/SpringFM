@@ -7,15 +7,21 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Future;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
+import io.github.defective4.springfm.server.data.AudioAnnotation;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class RedseaRDSProcessor implements AnnotationProcessor {
 
     private final AnnotationGenerator generator;
-    private OutputStream os;
+    private String lastTitle, lastText;
 
+    private OutputStream os;
     private Process redsea;
+
     private final int sampleRateKHz;
 
     private Future<?> task;
@@ -42,7 +48,27 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
                     while (redsea.isAlive()) {
                         String line = reader.readLine();
                         if (line == null) break;
-                        System.out.println(line);
+                        try {
+                            JsonObject root = JsonParser.parseString(line).getAsJsonObject();
+                            boolean changed = false;
+                            if (root.has("ps")) {
+                                String ps = root.get("ps").getAsString();
+                                if (!ps.equals(lastTitle)) {
+                                    lastTitle = ps;
+                                    changed = true;
+                                }
+                            }
+                            if (root.has("radiotext")) {
+                                String radiotext = root.get("radiotext").getAsString();
+                                if (!radiotext.equals(lastText)) {
+                                    lastText = radiotext;
+                                    changed = true;
+                                }
+                            }
+                            if (changed) {
+                                generator.provide(new AudioAnnotation(lastTitle, lastText));
+                            }
+                        } catch (Exception e) {}
                     }
                 }
             } catch (IOException e) {
