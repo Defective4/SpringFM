@@ -20,8 +20,11 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.github.defective4.springfm.backend.exception.ProfileNotFoundException;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.data.AuthResponse;
+import io.github.defective4.springfm.server.data.PlayerCommand;
 import io.github.defective4.springfm.server.data.ProfileInformation;
 import io.github.defective4.springfm.server.data.ServiceInformation;
+import io.github.defective4.springfm.server.packet.Packet;
+import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
 import io.github.defective4.springfm.server.service.RadioService;
 
 @RestController
@@ -91,6 +94,8 @@ public class ProfileController {
         prof.setActiveService(index);
         prof.haltServices();
         prof.startCurrentService();
+        prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE, Integer.toString(index)))));
         return "Ok";
     }
 }
