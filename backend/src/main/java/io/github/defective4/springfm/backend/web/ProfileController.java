@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,6 @@ import io.github.defective4.springfm.server.data.AuthResponse;
 import io.github.defective4.springfm.server.data.ProfileInformation;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.service.RadioService;
-import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 public class ProfileController {
@@ -66,20 +66,19 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/profile/{profile}/stream")
-    public ResponseEntity<StreamingResponseBody> radioStream(@PathVariable String profile, HttpServletResponse resp) {
+    public ResponseEntity<StreamingResponseBody> radioStream(@PathVariable String profile) {
         RadioProfile prof = profiles.get(profile);
         if (prof == null) throw new ProfileNotFoundException(profile);
-        resp.setContentType("application/octet-stream");
 
-        return new ResponseEntity<>(out -> {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
             prof.addClient(new DataOutputStream(out));
-            Object obj = new Object();
-            synchronized (obj) {
+            Object lock = new Object();
+            synchronized (lock) {
                 try {
-                    obj.wait();
+                    lock.wait();
                 } catch (InterruptedException e) {}
             }
-        }, HttpStatus.OK);
+        });
     }
 
     @PostMapping(path = "/profile/{profile}/service")
