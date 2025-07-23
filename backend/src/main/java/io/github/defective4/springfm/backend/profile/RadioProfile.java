@@ -38,7 +38,7 @@ public class RadioProfile {
             public void run() {
                 broadcastPacket(new Packet(new KeepAlivePayload(System.currentTimeMillis())));
             }
-        }, 0, 1000L);
+        }, 0, 10000L);
     }
 
     public void addClient(DataOutputStream os) throws IOException {
