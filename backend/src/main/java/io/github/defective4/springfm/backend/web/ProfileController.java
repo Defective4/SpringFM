@@ -57,7 +57,7 @@ public class ProfileController {
 
     @ExceptionHandler(IOException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String illegalArgument(IOException e) {
+    public String serverError(IOException e) {
         e.printStackTrace();
         return "There was an error on the server side";
     }
