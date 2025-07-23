@@ -48,6 +48,21 @@ public class RadioProfile {
         startCurrentService();
     }
 
+    public synchronized void broadcastPacket(Packet packet) {
+        clientsToRemove.clear();
+        synchronized (connectedClients) {
+            for (DataOutputStream os : connectedClients) {
+                try {
+                    packet.toStream(os);
+                    os.flush();
+                } catch (Exception e) {
+                    clientsToRemove.add(os);
+                }
+            }
+        }
+        clientsToRemove.forEach(RadioProfile.this::removeClient);
+    }
+
     public int getCurrentService() {
         return currentService;
     }
@@ -88,20 +103,5 @@ public class RadioProfile {
                 if (!service.isStarted()) service.start();
             }
         }
-    }
-
-    private synchronized void broadcastPacket(Packet packet) {
-        clientsToRemove.clear();
-        synchronized (connectedClients) {
-            for (DataOutputStream os : connectedClients) {
-                try {
-                    packet.toStream(os);
-                    os.flush();
-                } catch (Exception e) {
-                    clientsToRemove.add(os);
-                }
-            }
-        }
-        clientsToRemove.forEach(RadioProfile.this::removeClient);
     }
 }
