@@ -1,4 +1,4 @@
-package io.github.defective4.springfm.server.processing;
+package io.github.defective4.springfm.server.processing.impl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,21 +13,21 @@ import com.google.gson.JsonParser;
 
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.data.AudioAnnotation;
+import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class RedseaRDSProcessor implements AnnotationProcessor {
+public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
 
+    private static final int sampleRateKHz = 171;
     private final AnnotationGenerator generator;
     private OutputStream os;
-    private Process redsea;
 
-    private final int sampleRateKHz;
+    private Process redsea;
 
     private Future<?> task;
 
-    public RedseaRDSProcessor(AnnotationGenerator generator, int sampleRateKHz) {
+    public RedseaRDSProcessor(AnnotationGenerator generator) {
         this.generator = Objects.requireNonNull(generator);
-        this.sampleRateKHz = sampleRateKHz;
     }
 
     @Override
@@ -77,7 +77,8 @@ public class RedseaRDSProcessor implements AnnotationProcessor {
         redsea.destroyForcibly();
     }
 
-    public void writeData(byte[] data, int len) throws IOException {
+    @Override
+    public void write(byte[] data, int len) throws IOException {
         os.write(data, 0, len);
     }
 

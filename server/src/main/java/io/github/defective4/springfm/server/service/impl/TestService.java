@@ -1,4 +1,4 @@
-package io.github.defective4.springfm.server.service;
+package io.github.defective4.springfm.server.service.impl;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -10,7 +10,9 @@ import java.util.concurrent.Future;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.PacketGenerator;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
-import io.github.defective4.springfm.server.processing.RedseaRDSProcessor;
+import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
+import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.util.RateLimiter;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
@@ -20,7 +22,7 @@ public class TestService implements RadioService {
     private final File input;
     private final RateLimiter limiter = new RateLimiter(171000 * 2);
     private final String name;
-    private final RedseaRDSProcessor processor;
+    private final StreamingAnnotationProcessor processor;
     private Future<?> task;
 
     public TestService(File input, String name) {
@@ -28,7 +30,7 @@ public class TestService implements RadioService {
             if (generator != null) synchronized (generator) {
                 generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
             }
-        }, 171);
+        });
         this.input = input;
         this.name = name;
     }
@@ -64,7 +66,7 @@ public class TestService implements RadioService {
                         continue;
                     }
                     limiter.limit(read);
-                    processor.writeData(buffer, read);
+                    processor.write(buffer, read);
                     if (generator != null) synchronized (generator) {
                         generator.packetGenerated(new Packet(buffer));
                     }
@@ -78,8 +80,13 @@ public class TestService implements RadioService {
     @Override
     public void stop() throws IOException {
         if (!isStarted()) throw new IllegalStateException("Already stopped");
-        audioInput.close();
-        task.cancel(true);
-        processor.stop();
+        try {
+            audioInput.close();
+            task.cancel(true);
+            processor.stop();
+        } finally {
+            audioInput = null;
+            task = null;
+        }
     }
 }
