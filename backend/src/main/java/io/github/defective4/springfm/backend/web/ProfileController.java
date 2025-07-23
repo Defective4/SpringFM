@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -65,11 +66,12 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/profile/{profile}/stream")
-    public StreamingResponseBody radioStream(@PathVariable String profile, HttpServletResponse resp) {
+    public ResponseEntity<StreamingResponseBody> radioStream(@PathVariable String profile, HttpServletResponse resp) {
         RadioProfile prof = profiles.get(profile);
         if (prof == null) throw new ProfileNotFoundException(profile);
         resp.setContentType("application/octet-stream");
-        return out -> {
+
+        return new ResponseEntity<>(out -> {
             prof.addClient(new DataOutputStream(out));
             Object obj = new Object();
             synchronized (obj) {
@@ -77,7 +79,7 @@ public class ProfileController {
                     obj.wait();
                 } catch (InterruptedException e) {}
             }
-        };
+        }, HttpStatus.OK);
     }
 
     @PostMapping(path = "/profile/{profile}/service")
