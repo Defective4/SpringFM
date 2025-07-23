@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.github.defective4.springfm.backend.profile.RadioProfile;
-import io.github.defective4.springfm.server.service.TestService;
+import io.github.defective4.springfm.server.service.impl.TestService;
 
 @Configuration
 public class RadioConfiguration {

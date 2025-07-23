@@ -55,13 +55,6 @@ public class ProfileController {
         return e.getMessage();
     }
 
-    @ExceptionHandler(IOException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String serverError(IOException e) {
-        e.printStackTrace();
-        return "There was an error on the server side";
-    }
-
     @ExceptionHandler(ProfileNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String profileNotFound(ProfileNotFoundException e) {
@@ -82,6 +75,13 @@ public class ProfileController {
                 } catch (InterruptedException e) {}
             }
         });
+    }
+
+    @ExceptionHandler(IOException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String serverError(IOException e) {
+        e.printStackTrace();
+        return "There was an error on the server side";
     }
 
     @PostMapping(path = "/profile/{profile}/service")
