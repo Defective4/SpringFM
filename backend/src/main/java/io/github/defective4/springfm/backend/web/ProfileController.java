@@ -67,7 +67,10 @@ public class ProfileController {
         if (prof == null) throw new ProfileNotFoundException(profile);
 
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
-            prof.addClient(new DataOutputStream(out));
+            DataOutputStream os = new DataOutputStream(out);
+            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
+                    Integer.toString(prof.getCurrentService())))).toStream(os);
+            prof.addClient(os);
             Object lock = new Object();
             synchronized (lock) {
                 try {
