@@ -20,6 +20,8 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
 
     private static final int sampleRateKHz = 171;
     private final AnnotationGenerator generator;
+    private String lastTitle, lastText;
+
     private OutputStream os;
 
     private Process redsea;
@@ -53,12 +55,14 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
                             String radiotext = null;
                             if (root.has("ps")) {
                                 ps = root.get("ps").getAsString();
+                                lastTitle = ps;
                             }
                             if (root.has("radiotext")) {
                                 radiotext = root.get("radiotext").getAsString();
+                                lastText = radiotext;
                             }
-                            if (ps != null || radiotext != null) {
-                                generator.provide(new AudioAnnotation(ps, radiotext));
+                            if (lastText != null || lastText != null) {
+                                generator.provide(new AudioAnnotation(lastTitle, lastText));
                             }
                         } catch (Exception e) {}
                     }
@@ -72,6 +76,8 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
     @Override
     public void stop() throws IOException {
         if (!isStarted()) throw new IllegalStateException("Already stopped");
+        lastText = null;
+        lastTitle = null;
         task.cancel(true);
         os.close();
         redsea.destroyForcibly();
