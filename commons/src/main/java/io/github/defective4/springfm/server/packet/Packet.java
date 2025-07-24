@@ -7,8 +7,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class Packet {
+
     public static final byte TYPE_AUDIO = 2;
     public static final byte TYPE_PAYLOAD = 1;
 
@@ -32,6 +35,10 @@ public class Packet {
 
     public byte[] getPayload() {
         return payload;
+    }
+
+    public JsonObject getPayloadAsJSON() {
+        return JsonParser.parseString(new String(payload, StandardCharsets.UTF_8)).getAsJsonObject();
     }
 
     public byte getType() {
