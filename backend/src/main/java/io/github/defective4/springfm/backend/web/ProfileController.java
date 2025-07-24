@@ -46,7 +46,7 @@ public class ProfileController {
                     public ServiceInformation apply(RadioService svc) {
                         return new ServiceInformation(index++, svc.getName());
                     }
-                }).toList())).toList());
+                }).toList())).toList(), "A SpringFM instance");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
