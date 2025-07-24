@@ -8,8 +8,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.concurrent.Future;
 
+import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
-import io.github.defective4.springfm.server.packet.PacketGenerator;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
@@ -19,7 +19,7 @@ import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class TestService implements DigitalRadioService {
     private InputStream audioInput;
-    private PacketGenerator generator;
+    private DataGenerator generator;
     private int index = 0;
     private final File[] inputs;
     private final RateLimiter limiter = new RateLimiter(171000 * 2);
@@ -53,7 +53,7 @@ public class TestService implements DigitalRadioService {
     }
 
     @Override
-    public void setPacketGenerator(PacketGenerator generator) {
+    public void setPacketGenerator(DataGenerator generator) {
         this.generator = generator;
     }
 
@@ -75,7 +75,7 @@ public class TestService implements DigitalRadioService {
                     limiter.limit(read);
                     processor.write(buffer, read);
                     if (generator != null) synchronized (generator) {
-                        generator.packetGenerated(new Packet(buffer));
+                        generator.audioSampleGenerated(buffer);
                     }
                 }
             } catch (Exception e) {

@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import javax.sound.sampled.AudioFormat;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,7 +19,8 @@ public class RadioConfiguration {
     Map<String, RadioProfile> getAvailableProfiles() {
         RadioProfile def = new RadioProfile(
                 List.of(new TestService(new File[] { new File("wbfm.wav"), new File("wbfm2.wav") }, "RMF FM"),
-                        new TestService(new File[] { new File("wbfm2.wav") }, "Jedynka")));
+                        new TestService(new File[] { new File("wbfm2.wav") }, "Jedynka")),
+                new AudioFormat(171e3f, 16, 1, true, false));
         return Map.of("default", def);
     }
 }
