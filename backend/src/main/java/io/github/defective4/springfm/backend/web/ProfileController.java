@@ -25,11 +25,13 @@ import io.github.defective4.springfm.server.data.AuthResponse;
 import io.github.defective4.springfm.server.data.DigitalTuningInformation;
 import io.github.defective4.springfm.server.data.PlayerCommand;
 import io.github.defective4.springfm.server.data.ProfileInformation;
+import io.github.defective4.springfm.server.data.SerializableAudioFormat;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
 import io.github.defective4.springfm.server.service.RadioService;
+import io.github.defective4.springfm.server.util.AudioUtils;
 
 @RestController
 public class ProfileController {
@@ -41,6 +43,24 @@ public class ProfileController {
     public ProfileController(Map<String, RadioProfile> profiles, Main main) {
         this.profiles = profiles;
         this.main = main;
+    }
+
+    @GetMapping(path = "/profile/{profile}/audio")
+    public ResponseEntity<StreamingResponseBody> audioStream(@PathVariable String profile) {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+
+        return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
+            prof.addAudioClient(out);
+            out.write(AudioUtils.createWavHeader(prof.getAudioFormat()));
+            out.flush();
+            Object lock = new Object();
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {}
+            }
+        });
     }
 
     @GetMapping(path = "/auth")
@@ -59,7 +79,28 @@ public class ProfileController {
                                         ? new DigitalTuningInformation(List.of(digital.getStations()))
                                         : null);
                     }
-                }).toList())).toList(), "A SpringFM instance");
+                }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
+                "A SpringFM instance");
+    }
+
+    @GetMapping(path = "/profile/{profile}/data")
+    public ResponseEntity<StreamingResponseBody> dataStream(@PathVariable String profile) {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
+            DataOutputStream os = new DataOutputStream(out);
+            prof.addDataClient(os);
+            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
+                    Integer.toString(prof.getCurrentService())))).toStream(os);
+            os.flush();
+            Object lock = new Object();
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {}
+            }
+        });
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -72,25 +113,6 @@ public class ProfileController {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String profileNotFound(ProfileNotFoundException e) {
         return String.format("Sorry, profile \"%s\" was not found.", e.getInvalidProfile());
-    }
-
-    @GetMapping(path = "/profile/{profile}/stream")
-    public ResponseEntity<StreamingResponseBody> radioStream(@PathVariable String profile) {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
-
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
-            DataOutputStream os = new DataOutputStream(out);
-            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
-                    Integer.toString(prof.getCurrentService())))).toStream(os);
-            prof.addClient(os);
-            Object lock = new Object();
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {}
-            }
-        });
     }
 
     @ExceptionHandler(IOException.class)
