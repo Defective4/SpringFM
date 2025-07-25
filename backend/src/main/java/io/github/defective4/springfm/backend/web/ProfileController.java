@@ -93,6 +93,13 @@ public class ProfileController {
             prof.addDataClient(os);
             new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
                     Integer.toString(prof.getCurrentService())))).toStream(os);
+            if (prof.getCurrentService() >= 0) {
+                RadioService svc = prof.getServices().get(prof.getCurrentService());
+                if (svc instanceof DigitalRadioService digital) {
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
+                            Integer.toString(digital.getCurrentStation())))).toStream(os);
+                }
+            }
             os.flush();
             Object lock = new Object();
             synchronized (lock) {
@@ -134,6 +141,13 @@ public class ProfileController {
         prof.startCurrentService();
         prof.broadcastPacket(new Packet(new PlayerCommandPayload(
                 new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE, Integer.toString(index)))));
+        if (index >= 0) {
+            RadioService service = prof.getServices().get(index);
+            if (service instanceof DigitalRadioService digital) prof.broadcastPacket(
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
+                            Integer.toString(digital.getCurrentStation())))));
+        }
+
         return "Ok";
     }
 }
