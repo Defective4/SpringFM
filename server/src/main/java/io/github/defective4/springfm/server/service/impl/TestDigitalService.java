@@ -17,7 +17,7 @@ import io.github.defective4.springfm.server.service.DigitalRadioService;
 import io.github.defective4.springfm.server.util.RateLimiter;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class TestService implements DigitalRadioService {
+public class TestDigitalService implements DigitalRadioService {
     private InputStream audioInput;
     private DataGenerator generator;
     private int index = 0;
@@ -27,7 +27,7 @@ public class TestService implements DigitalRadioService {
     private final StreamingAnnotationProcessor processor;
     private Future<?> task;
 
-    public TestService(File[] inputs, String name) {
+    public TestDigitalService(File[] inputs, String name) {
         processor = new RedseaRDSProcessor(annotation -> {
             if (generator != null) synchronized (generator) {
                 generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));

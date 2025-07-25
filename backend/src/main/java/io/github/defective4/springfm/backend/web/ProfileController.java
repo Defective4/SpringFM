@@ -21,6 +21,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import io.github.defective4.springfm.backend.Main;
 import io.github.defective4.springfm.backend.exception.ProfileNotFoundException;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
+import io.github.defective4.springfm.server.data.AnalogTuningInformation;
 import io.github.defective4.springfm.server.data.AuthResponse;
 import io.github.defective4.springfm.server.data.DigitalTuningInformation;
 import io.github.defective4.springfm.server.data.PlayerCommand;
@@ -29,6 +30,7 @@ import io.github.defective4.springfm.server.data.SerializableAudioFormat;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
+import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.util.AudioUtils;
@@ -77,6 +79,10 @@ public class ProfileController {
                                         : ServiceInformation.TUNING_TYPE_ANALOG,
                                 svc instanceof DigitalRadioService digital
                                         ? new DigitalTuningInformation(List.of(digital.getStations()))
+                                        : null,
+                                svc instanceof AnalogRadioService analog
+                                        ? new AnalogTuningInformation(analog.getMinFrequency(),
+                                                analog.getMaxFrequency(), analog.getFrequencyStep())
                                         : null);
                     }
                 }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
