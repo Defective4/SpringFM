@@ -106,7 +106,7 @@ public class TestService implements DigitalRadioService {
     public void tune(int stationIndex) throws IOException {
         if (stationIndex < 0 || stationIndex >= inputs.length)
             throw new IllegalArgumentException("Station index out of bounds");
-        index = 0;
+        index = stationIndex;
         stop();
         start();
     }
