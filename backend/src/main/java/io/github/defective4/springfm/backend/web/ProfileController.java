@@ -47,6 +47,24 @@ public class ProfileController {
         this.main = main;
     }
 
+    @PostMapping(path = "/profile/{profile}/tune/analog")
+    public String analogTune(@PathVariable String profile, @RequestParam int frequency)
+            throws IllegalArgumentException, IOException {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+        int svc = prof.getCurrentService();
+        if (svc < 0) throw new IllegalStateException("This profile has no started service.");
+        RadioService service = prof.getServices().get(svc);
+        if (!(service instanceof AnalogRadioService analog))
+            throw new IllegalStateException("This service does not support analog tuning.");
+        float absoluteFreq = frequency * analog.getFrequencyStep();
+        if (analog.getCurrentFrequency() == absoluteFreq) return "Not changed";
+        analog.tune(absoluteFreq);
+        prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE, Integer.toString(frequency)))));
+        return "Ok";
+    }
+
     @GetMapping(path = "/profile/{profile}/audio")
     public ResponseEntity<StreamingResponseBody> audioStream(@PathVariable String profile) {
         RadioProfile prof = profiles.get(profile);
@@ -104,6 +122,10 @@ public class ProfileController {
                 if (svc instanceof DigitalRadioService digital) {
                     new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
                             Integer.toString(digital.getCurrentStation())))).toStream(os);
+                } else if (svc instanceof AnalogRadioService analog) {
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE,
+                            Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep())))))
+                            .toStream(os);
                 }
             }
             os.flush();
@@ -166,9 +188,13 @@ public class ProfileController {
                 new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE, Integer.toString(index)))));
         if (index >= 0) {
             RadioService service = prof.getServices().get(index);
-            if (service instanceof DigitalRadioService digital) prof.broadcastPacket(
-                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
-                            Integer.toString(digital.getCurrentStation())))));
+            if (service instanceof DigitalRadioService digital)
+                prof.broadcastPacket(
+                        new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
+                                Integer.toString(digital.getCurrentStation())))));
+            else if (service instanceof AnalogRadioService analog) prof.broadcastPacket(
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE,
+                            Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep()))))));
         }
 
         return "Ok";
