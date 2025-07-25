@@ -38,6 +38,11 @@ public class TestService implements DigitalRadioService {
     }
 
     @Override
+    public int getCurrentStation() {
+        return index;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
