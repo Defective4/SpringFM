@@ -110,9 +110,26 @@ public class ProfileController {
         });
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    @PostMapping(path = "/profile/{profile}/tune/digital")
+    public String digitalTune(@PathVariable String profile, @RequestParam int index)
+            throws IllegalArgumentException, IOException {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+        int svc = prof.getCurrentService();
+        if (svc < 0) throw new IllegalStateException("This profile has no started service.");
+        RadioService service = prof.getServices().get(svc);
+        if (!(service instanceof DigitalRadioService digital))
+            throw new IllegalStateException("This service does not support digital tuning.");
+        if (digital.getCurrentStation() == index) return "Not changed";
+        digital.tune(index);
+        prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE, Integer.toString(index)))));
+        return "Ok";
+    }
+
+    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String illegalArgument(IllegalArgumentException e) {
+    public String illegalArgument(Exception e) {
         return e.getMessage();
     }
 
