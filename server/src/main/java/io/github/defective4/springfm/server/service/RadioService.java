@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import io.github.defective4.springfm.server.packet.DataGenerator;
 
-public sealed interface RadioService permits DigitalRadioService {
+public sealed interface RadioService permits DigitalRadioService, AnalogRadioService {
     String getName();
 
     boolean isStarted();
