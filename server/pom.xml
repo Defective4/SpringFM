@@ -23,8 +23,10 @@
                         <configuration>
                             <executable>grcc</executable>
                             <arguments>
-                                <argument>-otarget/classes</argument>
+                                <argument>-o</argument>
+                                <argument>${project.basedir}/target/classes</argument>
                                 <argument>src/main/grc/rds_processor.grc</argument>
+                                <argument>src/main/grc/wbfm_rx.grc</argument>
                             </arguments>
                         </configuration>
                     </execution>
