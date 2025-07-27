@@ -33,18 +33,6 @@ options:
     state: enabled
 
 blocks:
-- name: gain
-  id: variable
-  parameters:
-    comment: ''
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [376, 12.0]
-    rotation: 0
-    state: true
 - name: samp_rate
   id: variable
   parameters:
@@ -135,12 +123,13 @@ blocks:
       \ arguments here\n        gr.sync_block.__init__(\n            self,\n     \
       \       name='Standard input to float',   # will show up in GRC\n          \
       \  in_sig=None,\n            out_sig=[np.float32]\n        )\n        self.cb\
-      \ = {}\n        \n    def set_callbacks(self, freq):\n        self.cb = {\n\
-      \            1.0: freq\n        }\n\n    def work(self, input_items, outp):\n\
-      \        cmdData = sys.stdin.buffer.read(4)\n        payloadData = sys.stdin.buffer.read(4)\n\
-      \        cmd = struct.unpack(\">f\", cmdData)[0]\n        payload = struct.unpack(\"\
-      >f\", payloadData)[0]\n        \n        if cmd in self.cb:\n            self.cb[cmd](payload)\n\
-      \        \n        return 0\n"
+      \ = {}\n        \n    def set_callbacks(self, freq, gain):\n        self.cb\
+      \ = {\n            1.0: freq,\n            2.0: gain\n        }\n\n    def work(self,\
+      \ input_items, outp):\n        cmdData = sys.stdin.buffer.read(4)\n        payloadData\
+      \ = sys.stdin.buffer.read(4)\n        cmd = struct.unpack(\">f\", cmdData)[0]\n\
+      \        payload = struct.unpack(\">f\", payloadData)[0]\n        \n       \
+      \ if cmd in self.cb:\n            self.cb[cmd](payload)\n        \n        return\
+      \ 0\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -169,7 +158,24 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [584, 12.0]
+    coordinate: [544, 12.0]
+    rotation: 0
+    state: true
+- name: gain
+  id: parameter
+  parameters:
+    alias: ''
+    comment: ''
+    hide: none
+    label: Initial gain
+    short_id: g
+    type: eng_float
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [296, 12.0]
     rotation: 0
     state: true
 - name: osmosdr_source_0
@@ -528,7 +534,7 @@ blocks:
     bus_structure: null
     coordinate: [8, 132.0]
     rotation: 0
-    state: true
+    state: enabled
 - name: pcm_writer
   id: epy_block
   parameters:
@@ -606,14 +612,14 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [448, 12.0]
+    coordinate: [408, 12.0]
     rotation: 0
     state: true
 - name: snippet_0
   id: snippet
   parameters:
     alias: ''
-    code: self.cmd_reader.set_callbacks(self.set_freq)
+    code: self.cmd_reader.set_callbacks(self.set_freq, self.set_gain)
     comment: ''
     priority: '0'
     section: main_after_start
