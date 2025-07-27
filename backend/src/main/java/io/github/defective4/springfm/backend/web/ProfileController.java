@@ -50,11 +50,8 @@ public class ProfileController {
     @PostMapping(path = "/profile/{profile}/tune/analog")
     public String analogTune(@PathVariable String profile, @RequestParam int frequency)
             throws IllegalArgumentException, IOException {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
-        int svc = prof.getCurrentService();
-        if (svc < 0) throw new IllegalStateException("This profile has no started service.");
-        RadioService service = prof.getServices().get(svc);
+        RadioProfile prof = getProfile(profile);
+        RadioService service = getCurrentService(prof);
         if (!(service instanceof AnalogRadioService analog))
             throw new IllegalStateException("This service does not support analog tuning.");
         float absoluteFreq = frequency * analog.getFrequencyStep();
@@ -67,8 +64,7 @@ public class ProfileController {
 
     @GetMapping(path = "/profile/{profile}/audio")
     public ResponseEntity<StreamingResponseBody> audioStream(@PathVariable String profile) {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
+        RadioProfile prof = getProfile(profile);
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
             prof.addAudioClient(out);
@@ -109,8 +105,7 @@ public class ProfileController {
 
     @GetMapping(path = "/profile/{profile}/data")
     public ResponseEntity<StreamingResponseBody> dataStream(@PathVariable String profile) {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
+        RadioProfile prof = getProfile(profile);
 
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
             DataOutputStream os = new DataOutputStream(out);
@@ -141,11 +136,8 @@ public class ProfileController {
     @PostMapping(path = "/profile/{profile}/tune/digital")
     public String digitalTune(@PathVariable String profile, @RequestParam int index)
             throws IllegalArgumentException, IOException {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
-        int svc = prof.getCurrentService();
-        if (svc < 0) throw new IllegalStateException("This profile has no started service.");
-        RadioService service = prof.getServices().get(svc);
+        RadioProfile prof = getProfile(profile);
+        RadioService service = getCurrentService(prof);
         if (!(service instanceof DigitalRadioService digital))
             throw new IllegalStateException("This service does not support digital tuning.");
         if (digital.getCurrentStation() == index) return "Not changed";
@@ -176,8 +168,7 @@ public class ProfileController {
 
     @PostMapping(path = "/profile/{profile}/service")
     public String setService(@PathVariable String profile, @RequestParam int index) throws IOException {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
+        RadioProfile prof = getProfile(profile);
         if (prof.getCurrentService() == index) {
             return "Not changed";
         }
@@ -198,5 +189,17 @@ public class ProfileController {
         }
 
         return "Ok";
+    }
+
+    private RadioProfile getProfile(String profile) {
+        RadioProfile prof = profiles.get(profile);
+        if (prof == null) throw new ProfileNotFoundException(profile);
+        return prof;
+    }
+
+    private static RadioService getCurrentService(RadioProfile prof) {
+        int svc = prof.getCurrentService();
+        if (svc < 0) throw new IllegalStateException("This profile has no started service.");
+        return prof.getServices().get(svc);
     }
 }
