@@ -13,20 +13,23 @@ import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
 import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
+import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.util.ScriptUtils;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class BroadcastFMService implements AnalogRadioService {
+public class BroadcastFMService implements AnalogRadioService, AdjustableGainService {
 
     private float freq;
+    private float gain;
     private DataGenerator generator;
     private DataInputStream inputStream;
-    private final float lowerFreq, upperFreq;
 
+    private final float lowerFreq, upperFreq;
     private final String name;
     private DataOutputStream outputStream;
     private Process radioProcess;
+
     private final StreamingAnnotationProcessor rdsProcessor;
 
     private final String sdrParams;
@@ -53,6 +56,11 @@ public class BroadcastFMService implements AnalogRadioService {
     }
 
     @Override
+    public float getCurrentGain() {
+        return gain;
+    }
+
+    @Override
     public float getFrequencyStep() {
         return 100e3f;
     }
@@ -60,6 +68,11 @@ public class BroadcastFMService implements AnalogRadioService {
     @Override
     public float getMaxFrequency() {
         return upperFreq;
+    }
+
+    @Override
+    public float getMaxGain() {
+        return 49.6f;
     }
 
     @Override
@@ -78,6 +91,15 @@ public class BroadcastFMService implements AnalogRadioService {
     }
 
     @Override
+    public void setGain(float gain) throws IOException {
+        if (gain < 0 || gain > getMaxGain()) throw new IllegalArgumentException("Gain out of range");
+        outputStream.writeFloat(2);
+        outputStream.writeFloat(gain);
+        outputStream.flush();
+        this.gain = gain;
+    }
+
+    @Override
     public void setPacketGenerator(DataGenerator generator) {
         this.generator = generator;
     }
@@ -86,7 +108,7 @@ public class BroadcastFMService implements AnalogRadioService {
     public void start() throws IOException {
         if (isStarted()) throw new IllegalStateException("Already started");
         stop();
-        String[] pms = new String[] { "-f", Float.toString(freq) };
+        String[] pms = new String[] { "-f", Float.toString(freq), "-g", Float.toString(gain) };
         if (sdrParams != null) {
             String[] ns = new String[pms.length + 2];
             System.arraycopy(pms, 0, ns, 2, pms.length);

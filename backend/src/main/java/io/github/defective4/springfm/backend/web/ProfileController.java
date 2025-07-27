@@ -24,12 +24,14 @@ import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.data.AnalogTuningInformation;
 import io.github.defective4.springfm.server.data.AuthResponse;
 import io.github.defective4.springfm.server.data.DigitalTuningInformation;
+import io.github.defective4.springfm.server.data.GainInformation;
 import io.github.defective4.springfm.server.data.PlayerCommand;
 import io.github.defective4.springfm.server.data.ProfileInformation;
 import io.github.defective4.springfm.server.data.SerializableAudioFormat;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
+import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
 import io.github.defective4.springfm.server.service.RadioService;
@@ -47,19 +49,35 @@ public class ProfileController {
         this.main = main;
     }
 
+    @PostMapping(path = "/profile/{profile}/gain")
+    public String adjustGain(@PathVariable String profile, @RequestParam float gain)
+            throws IllegalArgumentException, IOException {
+        RadioProfile prof = getProfile(profile);
+        RadioService service = getCurrentService(prof);
+        if (service instanceof AdjustableGainService adjustable) {
+            if (adjustable.getCurrentGain() == gain) return "Not changed";
+            adjustable.setGain(gain);
+            prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                    new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN, Float.toString(gain)))));
+            return "Ok";
+        }
+        throw new IllegalStateException("This service does not support gain adjusting");
+    }
+
     @PostMapping(path = "/profile/{profile}/tune/analog")
     public String analogTune(@PathVariable String profile, @RequestParam int frequency)
             throws IllegalArgumentException, IOException {
         RadioProfile prof = getProfile(profile);
         RadioService service = getCurrentService(prof);
-        if (!(service instanceof AnalogRadioService analog))
-            throw new IllegalStateException("This service does not support analog tuning.");
-        float absoluteFreq = frequency * analog.getFrequencyStep();
-        if (analog.getCurrentFrequency() == absoluteFreq) return "Not changed";
-        analog.tune(absoluteFreq);
-        prof.broadcastPacket(new Packet(new PlayerCommandPayload(
-                new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE, Integer.toString(frequency)))));
-        return "Ok";
+        if (service instanceof AnalogRadioService analog) {
+            float absoluteFreq = frequency * analog.getFrequencyStep();
+            if (analog.getCurrentFrequency() == absoluteFreq) return "Not changed";
+            analog.tune(absoluteFreq);
+            prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                    new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE, Integer.toString(frequency)))));
+            return "Ok";
+        }
+        throw new IllegalStateException("This service does not support analog tuning.");
     }
 
     @GetMapping(path = "/profile/{profile}/audio")
@@ -88,6 +106,11 @@ public class ProfileController {
                     @Override
                     public ServiceInformation apply(RadioService svc) {
                         boolean isDigital = svc instanceof DigitalRadioService;
+                        GainInformation gainInfo;
+                        if (svc instanceof AdjustableGainService adjustable)
+                            gainInfo = new GainInformation(adjustable.getMaxGain(), true);
+                        else
+                            gainInfo = new GainInformation(0, false);
                         return new ServiceInformation(index++, svc.getName(),
                                 isDigital ? ServiceInformation.TUNING_TYPE_DIGITAL
                                         : ServiceInformation.TUNING_TYPE_ANALOG,
@@ -97,7 +120,8 @@ public class ProfileController {
                                 svc instanceof AnalogRadioService analog
                                         ? new AnalogTuningInformation(analog.getMinFrequency(),
                                                 analog.getMaxFrequency(), analog.getFrequencyStep())
-                                        : null);
+                                        : null,
+                                gainInfo);
                     }
                 }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
                 "A SpringFM instance");
@@ -122,6 +146,12 @@ public class ProfileController {
                             Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep())))))
                             .toStream(os);
                 }
+
+                if (svc instanceof AdjustableGainService adjustable) {
+                    prof.broadcastPacket(
+                            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
+                                    Float.toString(adjustable.getCurrentGain())))));
+                }
             }
             os.flush();
             Object lock = new Object();
@@ -138,13 +168,14 @@ public class ProfileController {
             throws IllegalArgumentException, IOException {
         RadioProfile prof = getProfile(profile);
         RadioService service = getCurrentService(prof);
-        if (!(service instanceof DigitalRadioService digital))
-            throw new IllegalStateException("This service does not support digital tuning.");
-        if (digital.getCurrentStation() == index) return "Not changed";
-        digital.tune(index);
-        prof.broadcastPacket(new Packet(new PlayerCommandPayload(
-                new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE, Integer.toString(index)))));
-        return "Ok";
+        if (service instanceof DigitalRadioService digital) {
+            if (digital.getCurrentStation() == index) return "Not changed";
+            digital.tune(index);
+            prof.broadcastPacket(new Packet(new PlayerCommandPayload(
+                    new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE, Integer.toString(index)))));
+            return "Ok";
+        }
+        throw new IllegalStateException("This service does not support digital tuning.");
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
@@ -186,6 +217,10 @@ public class ProfileController {
             else if (service instanceof AnalogRadioService analog) prof.broadcastPacket(
                     new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE,
                             Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep()))))));
+
+            if (service instanceof AdjustableGainService adjustable) prof.broadcastPacket(
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
+                            Float.toString(adjustable.getCurrentGain())))));
         }
 
         return "Ok";
