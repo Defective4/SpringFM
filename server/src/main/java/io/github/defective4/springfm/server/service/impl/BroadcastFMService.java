@@ -136,6 +136,8 @@ public class BroadcastFMService implements AnalogRadioService {
 
     @Override
     public synchronized void tune(float freq) throws IllegalArgumentException, IOException {
+        if (freq < getMinFrequency() || freq > getMaxFrequency())
+            throw new IllegalArgumentException("Frequency out of range");
         outputStream.writeFloat(1);
         outputStream.writeFloat(freq);
         outputStream.flush();
