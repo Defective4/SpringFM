@@ -19,9 +19,9 @@ public class RadioConfiguration {
     @Bean
     Map<String, RadioProfile> getAvailableProfiles() {
         RadioProfile def = new RadioProfile(
-                List.of(new BroadcastFMService("Broadcast FM", 87e6f, 108e6f, "rtl_tcp=127.0.0.1:55555", true, -1),
-                        new TestDigitalService(new File[] { new File("wbfm.wav") }, "Test service")),
-                new AudioFormat(171e3f, 16, 1, true, false));
+                List.of(new BroadcastFMService("Broadcast FM", 87e6f, 108e6f, "rtl_tcp=127.0.0.1:55555", true, -1,
+                        48e3f), new TestDigitalService(new File[] { new File("wbfm.wav") }, "Test service")),
+                new AudioFormat(48e3f, 16, 1, true, true));
         return Map.of("default", def);
     }
 }
