@@ -3,9 +3,13 @@ package io.github.defective4.springfm.server.service.impl;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import javax.sound.sampled.AudioFormat;
+
+import io.github.defective4.springfm.server.audio.AudioResampler;
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
@@ -32,16 +36,27 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
 
     private final StreamingAnnotationProcessor rdsProcessor;
 
-    private final String sdrParams;
+    private final AudioResampler resampler;
 
+    private final String sdrParams;
     private Future<?> task;
 
     public BroadcastFMService(String name, float lowerFreq, float upperFreq, String sdrParams, boolean useRedsea,
-            int grRdsPort) {
+            int grRdsPort, float targetSampleRate) {
         this.name = name;
         this.lowerFreq = lowerFreq;
         this.upperFreq = upperFreq;
         this.sdrParams = sdrParams;
+        resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false),
+                new AudioFormat(targetSampleRate, 16, 1, true, false), (data, len) -> {
+                    byte[] effective;
+                    if (data.length == len) {
+                        effective = data;
+                    } else {
+                        effective = Arrays.copyOf(data, len);
+                    }
+                    generator.audioSampleGenerated(effective);
+                });
         freq = getMinFrequency();
         AnnotationGenerator annotationGenerator = annotation -> {
             generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
@@ -120,13 +135,14 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
         inputStream = new DataInputStream(radioProcess.getInputStream());
         outputStream = new DataOutputStream(radioProcess.getOutputStream());
         rdsProcessor.start();
+        resampler.start();
         task = ThreadUtils.submit(() -> {
             try {
                 byte[] buffer = new byte[4096];
                 while (isStarted()) {
                     inputStream.readFully(buffer);
                     rdsProcessor.write(buffer, buffer.length);
-                    generator.audioSampleGenerated(buffer);
+                    resampler.write(buffer);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -148,6 +164,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             if (inputStream != null) inputStream.close();
             if (outputStream != null) outputStream.close();
             if (rdsProcessor.isStarted()) rdsProcessor.stop();
+            resampler.stop();
         } finally {
             radioProcess = null;
             inputStream = null;
