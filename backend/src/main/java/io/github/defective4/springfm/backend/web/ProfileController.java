@@ -85,9 +85,11 @@ public class ProfileController {
         RadioProfile prof = getProfile(profile);
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
+            DataOutputStream dout = new DataOutputStream(out);
+            dout.write(AudioUtils.createWavHeader(prof.getAudioFormat()));
+            SerializableAudioFormat.Codec.toStream(new SerializableAudioFormat(prof.getAudioFormat()), dout);
+            dout.flush();
             prof.addAudioClient(out);
-            out.write(AudioUtils.createWavHeader(prof.getAudioFormat()));
-            out.flush();
             Object lock = new Object();
             synchronized (lock) {
                 try {
@@ -123,8 +125,7 @@ public class ProfileController {
                                         : null,
                                 gainInfo);
                     }
-                }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
-                "A SpringFM instance");
+                }).toList())).toList(), "A SpringFM instance");
     }
 
     @GetMapping(path = "/profile/{profile}/data")
