@@ -125,7 +125,8 @@ public class ProfileController {
                                         : null,
                                 gainInfo);
                     }
-                }).toList())).toList(), "A SpringFM instance");
+                }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
+                "A SpringFM instance");
     }
 
     @GetMapping(path = "/profile/{profile}/data")
