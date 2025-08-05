@@ -49,7 +49,8 @@ public class RadioConfiguration {
             List<RadioService> services = new ArrayList<>();
             for (ServiceConfiguration svcConfig : profileConfig.getServices()) {
                 Class<? extends RadioService> serviceClass = (Class<? extends RadioService>) Class
-                        .forName("io.github.defective4.springfm.server.service.impl." + svcConfig.getClassName());
+                        .forName(svcConfig.getClassName().contains(".") ? svcConfig.getClassName()
+                                : "io.github.defective4.springfm.server.service.impl." + svcConfig.getClassName());
                 Constructor<?> constructor = serviceClass.getConstructors()[0];
                 Parameter[] params = constructor.getParameters();
                 Object[] args = new Object[params.length];
