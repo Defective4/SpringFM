@@ -16,6 +16,7 @@
                 <version>3.5.0</version>
                 <executions>
                     <execution>
+                        <id>compile-hier-blocks</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
@@ -24,7 +25,26 @@
                             <executable>grcc</executable>
                             <arguments>
                                 <argument>-o</argument>
+                                <argument>${user.home}/.grc_gnuradio</argument>
+                                <argument>src/main/grc/pcm_stdout.grc</argument>
+                                <argument>src/main/grc/stdin_cmd.grc</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>compile-receivers</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <workingDirectory></workingDirectory>
+                            <executable>grcc</executable>
+                            <arguments>
+                                <argument>-o</argument>
                                 <argument>${project.basedir}/target/classes</argument>
+                                <argument>src/main/grc/stdin_cmd.grc</argument>
+                                <argument>src/main/grc/pcm_stdout.grc</argument>
                                 <argument>src/main/grc/rds_processor.grc</argument>
                                 <argument>src/main/grc/wbfm_rx.grc</argument>
                             </arguments>
