@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 
@@ -49,12 +50,13 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             @ServiceArgument(name = "useRedsea", defaultValue = "true") Boolean useRedsea,
             @ServiceArgument(name = "grRdsPort", defaultValue = "-1") Double grRdsPort,
             @ServiceArgument(name = "targetSampleRate") Double targetSampleRate) {
-        this.name = name;
-        this.lowerFreq = (float) (double) lowerFreq;
-        this.upperFreq = (float) (double) upperFreq;
+        this.name = Objects.requireNonNull(name);
+        this.lowerFreq = (float) (double) Objects.requireNonNull(lowerFreq);
+        this.upperFreq = (float) (double) Objects.requireNonNull(upperFreq);
         this.sdrParams = sdrParams;
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false),
-                new AudioFormat((float) (double) targetSampleRate, 16, 1, true, false), (data, len) -> {
+                new AudioFormat((float) (double) Objects.requireNonNull(targetSampleRate), 16, 1, true, false),
+                (data, len) -> {
                     byte[] effective;
                     if (data.length == len) {
                         effective = data;
@@ -68,7 +70,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
         };
         rdsProcessor = useRedsea ? new RedseaRDSProcessor(annotationGenerator)
-                : new GnuRadioRDSProcessor(annotationGenerator, (int) (double) grRdsPort);
+                : new GnuRadioRDSProcessor(annotationGenerator, (int) (double) Objects.requireNonNull(grRdsPort));
     }
 
     @Override
