@@ -1,0 +1,85 @@
+options:
+  parameters:
+    author: Defective4
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: hb
+    hier_block_src_path: '.:'
+    id: pcm_stdout
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: PCM to standard output
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: pad_source_0
+  id: pad_source
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    label: in
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_streams: '1'
+    optional: 'False'
+    type: short
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 140.0]
+    rotation: 0
+    state: true
+- name: pcm_writer
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport sys\nimport\
+      \ struct\n\nclass blk(gr.sync_block):\n\n    def __init__(self):\n        gr.sync_block.__init__(\n\
+      \            self,\n            name='PCM to standard output',\n           \
+      \ in_sig=[np.int16],\n            out_sig=None\n        )\n\n    def work(self,\
+      \ inp, outp):\n        for i in range(0, len(inp[0])):\n            sys.stdout.buffer.write(struct.pack(\"\
+      <h\", inp[0][i]))\n        return len(inp[0])\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    _io_cache: ('PCM to standard output', 'blk', [], [('0', 'short', 1)], [], '',
+      [])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 144.0]
+    rotation: 0
+    state: true
+
+connections:
+- [pad_source_0, '0', pcm_writer, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.5.1

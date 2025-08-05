@@ -139,7 +139,8 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             ns[1] = sdrParams;
             pms = ns;
         }
-        radioProcess = ScriptUtils.runGnuRadioScript("wbfm_rx", Set.of("cmd_reader", "pcm_writer"), pms);
+        radioProcess = ScriptUtils.runGnuRadioScript("wbfm_rx",
+                Set.of("pcm_stdout", "pcm_stdout_pcm_writer", "stdin_cmd", "stdin_cmd_cmd_reader"), pms);
         inputStream = new DataInputStream(radioProcess.getInputStream());
         outputStream = new DataOutputStream(radioProcess.getOutputStream());
         rdsProcessor.start();

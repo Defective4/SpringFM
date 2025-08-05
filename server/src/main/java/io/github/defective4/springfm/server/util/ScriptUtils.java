@@ -18,7 +18,7 @@ public class ScriptUtils {
 
         String[] toCopy = new String[dependencies.size() + 1];
         int index = 1;
-        for (String dep : dependencies) toCopy[index++] = resource + "_" + dep;
+        for (String dep : dependencies) toCopy[index++] = dep;
         toCopy[0] = resource;
 
         for (String element : toCopy)
