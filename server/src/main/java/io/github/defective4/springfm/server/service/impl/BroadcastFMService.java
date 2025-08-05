@@ -19,6 +19,7 @@ import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
+import io.github.defective4.springfm.server.service.ServiceArgument;
 import io.github.defective4.springfm.server.util.ScriptUtils;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
@@ -41,14 +42,19 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
     private final String sdrParams;
     private Future<?> task;
 
-    public BroadcastFMService(String name, float lowerFreq, float upperFreq, String sdrParams, boolean useRedsea,
-            int grRdsPort, float targetSampleRate) {
+    public BroadcastFMService(@ServiceArgument(name = "name") String name,
+            @ServiceArgument(name = "lowerFreq", defaultValue = "88e6") Double lowerFreq,
+            @ServiceArgument(name = "upperFreq", defaultValue = "108e6") Double upperFreq,
+            @ServiceArgument(name = "sdrParams") String sdrParams,
+            @ServiceArgument(name = "useRedsea", defaultValue = "true") Boolean useRedsea,
+            @ServiceArgument(name = "grRdsPort", defaultValue = "-1") Double grRdsPort,
+            @ServiceArgument(name = "targetSampleRate") Double targetSampleRate) {
         this.name = name;
-        this.lowerFreq = lowerFreq;
-        this.upperFreq = upperFreq;
+        this.lowerFreq = (float) (double) lowerFreq;
+        this.upperFreq = (float) (double) upperFreq;
         this.sdrParams = sdrParams;
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false),
-                new AudioFormat(targetSampleRate, 16, 1, true, false), (data, len) -> {
+                new AudioFormat((float) (double) targetSampleRate, 16, 1, true, false), (data, len) -> {
                     byte[] effective;
                     if (data.length == len) {
                         effective = data;
@@ -62,7 +68,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
         };
         rdsProcessor = useRedsea ? new RedseaRDSProcessor(annotationGenerator)
-                : new GnuRadioRDSProcessor(annotationGenerator, grRdsPort);
+                : new GnuRadioRDSProcessor(annotationGenerator, (int) (double) grRdsPort);
     }
 
     @Override
