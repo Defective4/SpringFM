@@ -18,10 +18,6 @@ public class AudioFormatConfiguration {
         return channels;
     }
 
-    public AudioFormat getFormat() {
-        return new AudioFormat(sampleRate, sampleSize, channels, true, bigEndian);
-    }
-
     public float getSampleRate() {
         return sampleRate;
     }
@@ -34,9 +30,13 @@ public class AudioFormatConfiguration {
         return bigEndian;
     }
 
+    public AudioFormat toAudioFormat() {
+        return new AudioFormat(sampleRate, sampleSize, channels, true, bigEndian);
+    }
+
     @Override
     public String toString() {
-        return "FormatConfiguration [sampleRate=" + sampleRate + ", sampleSize=" + sampleSize + ", channels=" + channels
-                + ", bigEndian=" + bigEndian + "]";
+        return "AudioFormatConfiguration [sampleRate=" + sampleRate + ", sampleSize=" + sampleSize + ", channels="
+                + channels + ", bigEndian=" + bigEndian + "]";
     }
 }

@@ -45,7 +45,6 @@ public class RadioConfiguration {
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
             String name = entry.getKey();
             ProfileConfiguration profileConfig = entry.getValue();
-            AudioFormat format = profileConfig.getFormat().getFormat();
             List<RadioService> services = new ArrayList<>();
             for (ServiceConfiguration svcConfig : profileConfig.getServices()) {
                 Class<? extends RadioService> serviceClass = (Class<? extends RadioService>) Class
@@ -56,22 +55,26 @@ public class RadioConfiguration {
                 Object[] args = new Object[params.length];
                 for (int i = 0; i < params.length; i++) {
                     Parameter param = params[i];
-                    ServiceArgument argInfo = param.getAnnotation(ServiceArgument.class);
-                    Object val;
-                    if (svcConfig.getArgs().containsKey(argInfo.name())
-                            && param.getType().isInstance(svcConfig.getArgs().get(argInfo.name()))) {
-                        val = svcConfig.getArgs().get(argInfo.name());
-                    } else if (argInfo.defaultValue().isEmpty())
-                        val = null;
-                    else {
-                        Method m = param.getType().getMethod("valueOf", String.class);
-                        val = m.invoke(null, argInfo.defaultValue());
+                    if (param.getType() == AudioFormat.class) {
+                        args[i] = svcConfig.getFormat().toAudioFormat();
+                    } else {
+                        ServiceArgument argInfo = param.getAnnotation(ServiceArgument.class);
+                        Object val;
+                        if (svcConfig.getArgs().containsKey(argInfo.name())
+                                && param.getType().isInstance(svcConfig.getArgs().get(argInfo.name()))) {
+                            val = svcConfig.getArgs().get(argInfo.name());
+                        } else if (argInfo.defaultValue().isEmpty())
+                            val = null;
+                        else {
+                            Method m = param.getType().getMethod("valueOf", String.class);
+                            val = m.invoke(null, argInfo.defaultValue());
+                        }
+                        args[i] = val;
                     }
-                    args[i] = val;
                 }
                 services.add((RadioService) constructor.newInstance(args));
             }
-            profiles.put(name, new RadioProfile(services, format));
+            profiles.put(name, new RadioProfile(services));
         }
     }
 
