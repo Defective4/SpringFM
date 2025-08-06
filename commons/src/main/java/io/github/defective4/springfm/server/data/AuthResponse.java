@@ -20,4 +20,9 @@ public class AuthResponse {
         return profiles;
     }
 
+    @Override
+    public String toString() {
+        return "AuthResponse [instanceName=" + instanceName + ", profiles=" + profiles + "]";
+    }
+
 }

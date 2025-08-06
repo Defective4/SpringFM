@@ -19,4 +19,9 @@ public class ProfileInformation {
         return services;
     }
 
+    @Override
+    public String toString() {
+        return "ProfileInformation [name=" + name + ", services=" + services + "]";
+    }
+
 }
