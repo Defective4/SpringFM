@@ -17,4 +17,9 @@ public class GainInformation {
         return gainSupported;
     }
 
+    @Override
+    public String toString() {
+        return "GainInformation [gainSupported=" + gainSupported + ", maxGain=" + maxGain + "]";
+    }
+
 }

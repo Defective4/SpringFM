@@ -48,4 +48,10 @@ public class ServiceInformation {
         return tuningType;
     }
 
+    @Override
+    public String toString() {
+        return "ServiceInformation [analogTuning=" + analogTuning + ", digitalTuning=" + digitalTuning + ", gainInfo="
+                + gainInfo + ", index=" + index + ", name=" + name + ", tuningType=" + tuningType + "]";
+    }
+
 }

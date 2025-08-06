@@ -21,4 +21,9 @@ public class AnalogTuningInformation {
         return step;
     }
 
+    @Override
+    public String toString() {
+        return "AnalogTuningInformation [minFreq=" + minFreq + ", maxFreq=" + maxFreq + ", step=" + step + "]";
+    }
+
 }

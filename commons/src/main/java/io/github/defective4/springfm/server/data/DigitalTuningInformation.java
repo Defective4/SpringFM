@@ -14,4 +14,9 @@ public class DigitalTuningInformation {
         return Collections.unmodifiableList(stations);
     }
 
+    @Override
+    public String toString() {
+        return "DigitalTuningInformation [stations=" + stations + "]";
+    }
+
 }
