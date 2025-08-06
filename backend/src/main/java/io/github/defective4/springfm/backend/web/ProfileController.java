@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import javax.sound.sampled.AudioFormat;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -83,11 +85,18 @@ public class ProfileController {
     @GetMapping(path = "/profile/{profile}/audio")
     public ResponseEntity<StreamingResponseBody> audioStream(@PathVariable String profile) {
         RadioProfile prof = getProfile(profile);
+        int index = prof.getCurrentService();
+        AudioFormat fmt;
+        if (index < 0) {
+            fmt = new AudioFormat(44.1e3f, 16, 1, true, false);
+        } else {
+            fmt = prof.getServices().get(index).getAudioFormat();
+        }
 
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
             DataOutputStream dout = new DataOutputStream(out);
-            dout.write(AudioUtils.createWavHeader(prof.getAudioFormat()));
-            SerializableAudioFormat.Codec.toStream(new SerializableAudioFormat(prof.getAudioFormat()), dout);
+            dout.write(AudioUtils.createWavHeader(fmt));
+            SerializableAudioFormat.Codec.toStream(new SerializableAudioFormat(fmt), dout);
             dout.flush();
             prof.addAudioClient(out);
             Object lock = new Object();
@@ -125,8 +134,7 @@ public class ProfileController {
                                         : null,
                                 gainInfo);
                     }
-                }).toList(), new SerializableAudioFormat(profile.getValue().getAudioFormat()))).toList(),
-                "A SpringFM instance");
+                }).toList())).toList(), "A SpringFM instance");
     }
 
     @GetMapping(path = "/profile/{profile}/data")

@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.sound.sampled.AudioFormat;
-
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.KeepAlivePayload;
@@ -20,7 +18,6 @@ public class RadioProfile {
 
     private static final Timer KEEP_ALIVE_TIMER = new Timer(true);
 
-    private final AudioFormat audioFormat;
     private final List<OutputStream> clientsToRemove = new ArrayList<>();
     private final List<OutputStream> connectedAudioClients = new ArrayList<>();
     private final List<DataOutputStream> connectedDataClients = new ArrayList<>();
@@ -28,9 +25,8 @@ public class RadioProfile {
     private int currentService = -1;
     private final List<RadioService> services;
 
-    public RadioProfile(List<RadioService> services, AudioFormat audioFormat) {
+    public RadioProfile(List<RadioService> services) {
         this.services = Collections.unmodifiableList(services);
-        this.audioFormat = audioFormat;
         for (RadioService svc : services) svc.setPacketGenerator(new DataGenerator() {
 
             @Override
@@ -94,10 +90,6 @@ public class RadioProfile {
             }
         }
         clientsToRemove.forEach(RadioProfile.this::removeClient);
-    }
-
-    public AudioFormat getAudioFormat() {
-        return audioFormat;
     }
 
     public int getCurrentService() {
