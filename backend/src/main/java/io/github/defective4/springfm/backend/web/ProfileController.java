@@ -29,7 +29,6 @@ import io.github.defective4.springfm.server.data.DigitalTuningInformation;
 import io.github.defective4.springfm.server.data.GainInformation;
 import io.github.defective4.springfm.server.data.PlayerCommand;
 import io.github.defective4.springfm.server.data.ProfileInformation;
-import io.github.defective4.springfm.server.data.SerializableAudioFormat;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
@@ -96,7 +95,6 @@ public class ProfileController {
         return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
             DataOutputStream dout = new DataOutputStream(out);
             dout.write(AudioUtils.createWavHeader(fmt));
-            SerializableAudioFormat.Codec.toStream(new SerializableAudioFormat(fmt), dout);
             dout.flush();
             prof.addAudioClient(out);
             Object lock = new Object();
