@@ -31,7 +31,7 @@ public class RadioProfile {
 
             @Override
             public void audioSampleGenerated(byte[] buffer) {
-                broadcastAudioSample(buffer);
+                broadcastAudioSample(buffer, true);
             }
 
             @Override
@@ -62,8 +62,9 @@ public class RadioProfile {
         startCurrentService();
     }
 
-    public synchronized void broadcastAudioSample(byte[] buffer) {
-        for (int i = 0; i < buffer.length; i += 2) {
+    public synchronized void broadcastAudioSample(byte[] buffer, boolean swapEndianness) {
+        if (buffer.length != 4096) throw new IllegalArgumentException("Audio frame must be 4096 bytes long");
+        if (swapEndianness) for (int i = 0; i < buffer.length; i += 2) {
             byte b = buffer[i];
             buffer[i] = buffer[i + 1];
             buffer[i + 1] = b;

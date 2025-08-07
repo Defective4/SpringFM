@@ -1,7 +1,7 @@
 package io.github.defective4.springfm.server.audio;
 
+import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -17,7 +17,7 @@ import io.github.defective4.springfm.server.util.ThreadUtils;
 public class AudioResampler {
     private final AudioFormat from, to;
     private final AudioSampleGenerator generator;
-    private InputStream input;
+    private DataInputStream input;
     private OutputStream output;
     private Future<?> resamplerTask, readerTask;
 
@@ -27,12 +27,14 @@ public class AudioResampler {
         this.generator = generator;
     }
 
+    @SuppressWarnings("resource")
     public void start() throws IOException {
         PipedInputStream audioIn = new PipedInputStream(
                 (int) (from.getSampleRate() * (from.getSampleSizeInBits() / 8)));
         PipedOutputStream audioOut = new PipedOutputStream();
         output = new PipedOutputStream(audioIn);
-        input = new PipedInputStream(audioOut, (int) (to.getSampleRate() * (to.getSampleSizeInBits() / 8)));
+        input = new DataInputStream(
+                new PipedInputStream(audioOut, (int) (to.getSampleRate() * (to.getSampleSizeInBits() / 8))));
 
         resamplerTask = ThreadUtils.submit(() -> {
             try {
@@ -46,12 +48,10 @@ public class AudioResampler {
 
         readerTask = ThreadUtils.submit(() -> {
             try {
+                byte[] data = new byte[4096];
                 while (true) {
-                    if (input.available() > 0) {
-                        byte[] data = new byte[input.available()];
-                        int read = input.read(data);
-                        generator.sampleGenerated(data, read);
-                    }
+                    input.readFully(data);
+                    generator.sampleGenerated(data, data.length);
                 }
             } catch (Exception e2) {
                 e2.printStackTrace();
