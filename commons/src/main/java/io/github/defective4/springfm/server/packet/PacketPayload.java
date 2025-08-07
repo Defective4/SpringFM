@@ -19,4 +19,9 @@ public class PacketPayload {
         return payload;
     }
 
+    @Override
+    public String toString() {
+        return "PacketPayload [key=" + key + ", payload=" + payload + "]";
+    }
+
 }
