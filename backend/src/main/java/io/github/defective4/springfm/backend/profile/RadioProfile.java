@@ -63,6 +63,11 @@ public class RadioProfile {
     }
 
     public synchronized void broadcastAudioSample(byte[] buffer) {
+        for (int i = 0; i < buffer.length; i += 2) {
+            byte b = buffer[i];
+            buffer[i] = buffer[i + 1];
+            buffer[i + 1] = b;
+        }
         clientsToRemove.clear();
         synchronized (connectedAudioClients) {
             for (OutputStream os : connectedAudioClients) {
