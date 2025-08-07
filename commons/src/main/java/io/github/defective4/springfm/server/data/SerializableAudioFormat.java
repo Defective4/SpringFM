@@ -4,20 +4,18 @@ import javax.sound.sampled.AudioFormat;
 
 public class SerializableAudioFormat {
 
-    private final boolean bigEndian;
     private final int channels;
     private final float sampleRate;
     private final int sampleSize;
 
     public SerializableAudioFormat(AudioFormat format) {
-        this(format.getSampleRate(), format.getSampleSizeInBits(), format.getChannels(), format.isBigEndian());
+        this(format.getSampleRate(), format.getSampleSizeInBits(), format.getChannels());
     }
 
-    public SerializableAudioFormat(float sampleRate, int sampleSize, int channels, boolean bigEndian) {
+    public SerializableAudioFormat(float sampleRate, int sampleSize, int channels) {
         this.sampleRate = sampleRate;
         this.sampleSize = sampleSize;
         this.channels = channels;
-        this.bigEndian = bigEndian;
     }
 
     public int getChannels() {
@@ -31,9 +29,4 @@ public class SerializableAudioFormat {
     public int getSampleSize() {
         return sampleSize;
     }
-
-    public boolean isBigEndian() {
-        return bigEndian;
-    }
-
 }
