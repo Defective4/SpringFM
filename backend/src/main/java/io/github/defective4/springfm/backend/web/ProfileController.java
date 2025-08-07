@@ -29,6 +29,7 @@ import io.github.defective4.springfm.server.data.DigitalTuningInformation;
 import io.github.defective4.springfm.server.data.GainInformation;
 import io.github.defective4.springfm.server.data.PlayerCommand;
 import io.github.defective4.springfm.server.data.ProfileInformation;
+import io.github.defective4.springfm.server.data.SerializableAudioFormat;
 import io.github.defective4.springfm.server.data.ServiceInformation;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.PlayerCommandPayload;
@@ -214,6 +215,13 @@ public class ProfileController {
         prof.setActiveService(index);
         prof.haltServices();
         prof.startCurrentService();
+        AudioFormat fmt;
+        if (index < 0) {
+            fmt = new AudioFormat(44.1e3f, 16, 1, true, false);
+        } else {
+            fmt = prof.getServices().get(index).getAudioFormat();
+        }
+        prof.broadcastAudioSample(SerializableAudioFormat.Codec.createFormatSwitchFrame(fmt), false);
         prof.broadcastPacket(new Packet(new PlayerCommandPayload(
                 new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE, Integer.toString(index)))));
         if (index >= 0) {
