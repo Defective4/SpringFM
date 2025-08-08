@@ -24,7 +24,6 @@ public class SerializableAudioFormat {
             ByteBuffer buffer = ByteBuffer.allocate(4096);
             buffer.put(SWITCH_FRAME_HEADER);
             buffer.putFloat(target.getSampleRate());
-            buffer.put((byte) target.getSampleSizeInBits());
             buffer.put((byte) target.getChannels());
             byte[] bufData = new byte[SWITCH_FRAME_HEADER.length + 6];
             buffer.get(0, bufData);
@@ -35,7 +34,7 @@ public class SerializableAudioFormat {
         public static AudioFormat fromSwitchFrame(byte[] data) {
             ByteBuffer buffer = ByteBuffer.wrap(data);
             buffer.position(SWITCH_FRAME_HEADER.length);
-            return new AudioFormat(buffer.getFloat(), buffer.get(), buffer.get(), true, false);
+            return new AudioFormat(buffer.getFloat(), 16, buffer.get(), true, false);
         }
 
         public static boolean isSwitchFrame(byte[] data) {
@@ -62,15 +61,13 @@ public class SerializableAudioFormat {
 
     private final int channels;
     private final float sampleRate;
-    private final int sampleSize;
 
     public SerializableAudioFormat(AudioFormat format) {
-        this(format.getSampleRate(), format.getSampleSizeInBits(), format.getChannels());
+        this(format.getSampleRate(), format.getChannels());
     }
 
-    public SerializableAudioFormat(float sampleRate, int sampleSize, int channels) {
+    public SerializableAudioFormat(float sampleRate, int channels) {
         this.sampleRate = sampleRate;
-        this.sampleSize = sampleSize;
         this.channels = channels;
     }
 
@@ -80,9 +77,5 @@ public class SerializableAudioFormat {
 
     public float getSampleRate() {
         return sampleRate;
-    }
-
-    public int getSampleSize() {
-        return sampleSize;
     }
 }
