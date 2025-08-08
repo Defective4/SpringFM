@@ -20,6 +20,7 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
 
     private static final int sampleRateKHz = 171;
     private final AnnotationGenerator generator;
+    private boolean lastNonMusic;
     private String lastTitle, lastText;
 
     private OutputStream os;
@@ -51,18 +52,18 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
                         if (line == null) break;
                         try {
                             JsonObject root = JsonParser.parseString(line).getAsJsonObject();
-                            String ps = null;
-                            String radiotext = null;
                             if (root.has("ps")) {
-                                ps = root.get("ps").getAsString();
-                                lastTitle = ps;
+                                lastTitle = root.get("ps").getAsString();
                             }
                             if (root.has("radiotext")) {
-                                radiotext = root.get("radiotext").getAsString();
-                                lastText = radiotext;
+                                lastText = root.get("radiotext").getAsString();
                             }
+                            if (root.has("is_music")) {
+                                lastNonMusic = !root.get("is_music").getAsBoolean();
+                            }
+
                             if (lastText != null || lastText != null) {
-                                generator.provide(new AudioAnnotation(lastTitle, lastText));
+                                generator.provide(new AudioAnnotation(lastTitle, lastText, lastNonMusic));
                             }
                         } catch (Exception e) {}
                     }
