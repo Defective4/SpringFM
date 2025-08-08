@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import io.github.defective4.sdr.rds.RDSAdapter;
+import io.github.defective4.sdr.rds.RDSFlags;
 import io.github.defective4.sdr.rds.RDSReceiver;
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.data.AudioAnnotation;
@@ -37,19 +38,27 @@ public class GnuRadioRDSProcessor implements StreamingAnnotationProcessor {
         rdsRx = new RDSReceiver("tcp://127.0.0.1:" + rdsPort, false);
         ThreadUtils.submit(() -> {
             rdsRx.addListener(new RDSAdapter() {
+                private boolean lastNonMusic;
                 private String lastText, lastTitle;
+
+                @Override
+                public void flagsUpdated(RDSFlags flags) {
+                    lastNonMusic = !flags.isMusic();
+                    generator.provide(new AudioAnnotation(lastTitle, lastText, lastNonMusic));
+                }
 
                 @Override
                 public void radiotextUpdated(String radiotext) {
                     lastText = radiotext;
-                    generator.provide(new AudioAnnotation(lastTitle, lastText));
+                    generator.provide(new AudioAnnotation(lastTitle, lastText, lastNonMusic));
                 }
 
                 @Override
                 public void stationUpdated(String station) {
                     lastTitle = station;
-                    generator.provide(new AudioAnnotation(lastTitle, lastText));
+                    generator.provide(new AudioAnnotation(lastTitle, lastText, lastNonMusic));
                 }
+
             });
             try {
                 rdsRx.start();
