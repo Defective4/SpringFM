@@ -1,12 +1,16 @@
 package io.github.defective4.springfm.backend.config;
 
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,17 +24,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import io.github.defective4.springfm.backend.config.file.AudioFormatConfiguration;
 import io.github.defective4.springfm.backend.config.file.ProfileConfiguration;
 import io.github.defective4.springfm.backend.config.file.ServiceConfiguration;
 import io.github.defective4.springfm.backend.config.file.UserConfiguration;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
+import io.github.defective4.springfm.server.service.impl.BroadcastFMService;
 
 @Configuration
 public class RadioConfiguration {
 
+    private static final File CONFIG_FILE = new File("springfm.json");
     private final UserConfiguration config;
     private final Gson gson;
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
@@ -39,7 +47,8 @@ public class RadioConfiguration {
             throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
             IllegalAccessException, InvocationTargetException, InstantiationException, IllegalArgumentException {
         this.gson = gson;
-        try (Reader reader = new FileReader("springfm.json")) {
+        if (!CONFIG_FILE.exists()) saveDefaultConfig();
+        try (Reader reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
             config = gson.fromJson(reader, UserConfiguration.class);
         }
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
@@ -89,5 +98,15 @@ public class RadioConfiguration {
     @Bean
     Map<String, RadioProfile> getAvailableProfiles() {
         return Collections.unmodifiableMap(profiles);
+    }
+
+    private static void saveDefaultConfig() throws IOException {
+        UserConfiguration config = new UserConfiguration(Map.of("default",
+                new ProfileConfiguration(List.of(new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
+                        Map.of("name", "Broadcast FM", "lowerFreq", 87e6f, "upperFreq", 108e6f),
+                        new AudioFormatConfiguration(44.1e3f, 1))))));
+        try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
+            new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
+        }
     }
 }
