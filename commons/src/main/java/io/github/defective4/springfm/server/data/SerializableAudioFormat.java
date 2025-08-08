@@ -25,7 +25,7 @@ public class SerializableAudioFormat {
             buffer.put(SWITCH_FRAME_HEADER);
             buffer.putFloat(target.getSampleRate());
             buffer.put((byte) target.getChannels());
-            byte[] bufData = new byte[SWITCH_FRAME_HEADER.length + 6];
+            byte[] bufData = new byte[SWITCH_FRAME_HEADER.length + 5];
             buffer.get(0, bufData);
             buffer.putLong(calculateChecksum(bufData));
             return buffer.array();
@@ -42,10 +42,10 @@ public class SerializableAudioFormat {
                 if (SWITCH_FRAME_HEADER[i] != data[i]) return false;
             }
             CRC.reset();
-            CRC.update(data, 0, SWITCH_FRAME_HEADER.length + 6);
+            CRC.update(data, 0, SWITCH_FRAME_HEADER.length + 5);
             long checksum = CRC.getValue();
             byte[] remoteChecksum = new byte[8];
-            System.arraycopy(data, SWITCH_FRAME_HEADER.length + 6, remoteChecksum, 0, remoteChecksum.length);
+            System.arraycopy(data, SWITCH_FRAME_HEADER.length + 5, remoteChecksum, 0, remoteChecksum.length);
             return toLong(remoteChecksum) == checksum;
         }
 
