@@ -34,7 +34,7 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.github.defective4.radio</groupId>
+            <groupId>io.github.defective4.radio.springfm</groupId>
             <artifactId>server</artifactId>
             <version>0.1</version>
         </dependency>
@@ -57,18 +57,6 @@
                         </manifest>
                     </archive>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
