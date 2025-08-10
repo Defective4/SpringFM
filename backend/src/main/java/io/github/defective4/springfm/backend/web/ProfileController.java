@@ -140,9 +140,8 @@ public class ProfileController {
                 }
 
                 if (svc instanceof AdjustableGainService adjustable) {
-                    prof.broadcastPacket(
-                            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
-                                    Float.toString(adjustable.getCurrentGain())))));
+                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
+                            Float.toString(adjustable.getCurrentGain())))).toStream(os);
                 }
             }
             os.flush();
