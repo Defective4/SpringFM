@@ -62,7 +62,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             } else {
                 effective = Arrays.copyOf(data, len);
             }
-            generator.audioSampleGenerated(effective);
+            generator.audioSampleGenerated(effective, true);
         });
         freq = getMinFrequency();
         AnnotationGenerator annotationGenerator = annotation -> {

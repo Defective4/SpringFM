@@ -29,15 +29,6 @@ public class AuthResponse {
         return profiles;
     }
 
-    public boolean verify(MessageDigest md, byte[] hash) {
-        byte[] newHash = hash(md);
-        if (newHash.length != hash.length) return false;
-        for (int i = 0; i < hash.length; i++) {
-            if (hash[i] != newHash[i]) return false;
-        }
-        return true;
-    }
-
     public byte[] hash(MessageDigest md) {
         for (ProfileInformation info : profiles) {
             md.update(info.getName().getBytes(StandardCharsets.UTF_8));
@@ -65,6 +56,15 @@ public class AuthResponse {
     @Override
     public String toString() {
         return "AuthResponse [instanceName=" + instanceName + ", profiles=" + profiles + ", hashAlgo=" + hashAlgo + "]";
+    }
+
+    public boolean verify(MessageDigest md, byte[] hash) {
+        byte[] newHash = hash(md);
+        if (newHash.length != hash.length) return false;
+        for (int i = 0; i < hash.length; i++) {
+            if (hash[i] != newHash[i]) return false;
+        }
+        return true;
     }
 
 }

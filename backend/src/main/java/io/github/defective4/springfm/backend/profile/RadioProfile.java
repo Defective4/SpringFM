@@ -30,8 +30,8 @@ public class RadioProfile {
         for (RadioService svc : services) svc.setPacketGenerator(new DataGenerator() {
 
             @Override
-            public void audioSampleGenerated(byte[] buffer) {
-                broadcastAudioSample(buffer, true);
+            public void audioSampleGenerated(byte[] buffer, boolean bigEndian) {
+                broadcastAudioSample(buffer, bigEndian);
             }
 
             @Override

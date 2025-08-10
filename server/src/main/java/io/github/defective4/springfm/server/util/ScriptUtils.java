@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 public class ScriptUtils {
@@ -40,6 +41,17 @@ public class ScriptUtils {
 
     public static Process runGnuRadioScript(String resource, String... args) throws IOException {
         return runGnuRadioScript(resource, Collections.emptySet(), args);
+    }
+
+    public static Process startProcess(String command, Object... args) throws IOException {
+        String[] processArray = new String[args.length + 1];
+        processArray[0] = Objects.requireNonNull(command);
+        for (int i = 0; i < args.length; i++) {
+            processArray[i + 1] = String.valueOf(args[i]);
+        }
+        Process process = new ProcessBuilder(processArray).start();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroyForcibly()));
+        return process;
     }
 
     private static void recursiveDelete(File dir) {
