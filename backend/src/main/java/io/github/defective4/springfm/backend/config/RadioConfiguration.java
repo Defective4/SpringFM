@@ -11,6 +11,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -98,6 +100,11 @@ public class RadioConfiguration {
     @Bean
     Map<String, RadioProfile> getAvailableProfiles() {
         return Collections.unmodifiableMap(profiles);
+    }
+
+    @Bean
+    MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance("md5");
     }
 
     private static void saveDefaultConfig() throws IOException {

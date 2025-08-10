@@ -2,6 +2,7 @@ package io.github.defective4.springfm.backend.web;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -44,11 +45,13 @@ public class ProfileController {
 
     private final Main main;
 
+    private final MessageDigest md;
     private final Map<String, RadioProfile> profiles;
 
-    public ProfileController(Map<String, RadioProfile> profiles, Main main) {
+    public ProfileController(Map<String, RadioProfile> profiles, Main main, MessageDigest md) {
         this.profiles = profiles;
         this.main = main;
+        this.md = md;
     }
 
     @PostMapping(path = "/profile/{profile}/gain")
@@ -109,31 +112,7 @@ public class ProfileController {
 
     @GetMapping(path = "/auth")
     public AuthResponse auth() {
-        return new AuthResponse(profiles.entrySet().stream().map(profile -> new ProfileInformation(profile.getKey(),
-                profile.getValue().getServices().stream().map(new Function<RadioService, ServiceInformation>() {
-                    int index = 0;
-
-                    @Override
-                    public ServiceInformation apply(RadioService svc) {
-                        boolean isDigital = svc instanceof DigitalRadioService;
-                        GainInformation gainInfo;
-                        if (svc instanceof AdjustableGainService adjustable)
-                            gainInfo = new GainInformation(adjustable.getMaxGain(), true);
-                        else
-                            gainInfo = new GainInformation(0, false);
-                        return new ServiceInformation(index++, svc.getName(),
-                                isDigital ? ServiceInformation.TUNING_TYPE_DIGITAL
-                                        : ServiceInformation.TUNING_TYPE_ANALOG,
-                                svc instanceof DigitalRadioService digital
-                                        ? new DigitalTuningInformation(List.of(digital.getStations()))
-                                        : null,
-                                svc instanceof AnalogRadioService analog
-                                        ? new AnalogTuningInformation(analog.getMinFrequency(),
-                                                analog.getMaxFrequency(), analog.getFrequencyStep())
-                                        : null,
-                                gainInfo);
-                    }
-                }).toList())).toList(), "A SpringFM instance");
+        return getAuthResponse();
     }
 
     @GetMapping(path = "/profile/{profile}/data")
@@ -142,7 +121,11 @@ public class ProfileController {
 
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
             DataOutputStream os = new DataOutputStream(out);
+            byte[] hash = getAuthResponse().hash(md);
+            os.writeInt(hash.length);
+            os.write(hash);
             prof.addDataClient(os);
+
             new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
                     Integer.toString(prof.getCurrentService())))).toStream(os);
             if (prof.getCurrentService() >= 0) {
@@ -240,6 +223,34 @@ public class ProfileController {
         }
 
         return "Ok";
+    }
+
+    private AuthResponse getAuthResponse() {
+        return new AuthResponse(profiles.entrySet().stream().map(profile -> new ProfileInformation(profile.getKey(),
+                profile.getValue().getServices().stream().map(new Function<RadioService, ServiceInformation>() {
+                    int index = 0;
+
+                    @Override
+                    public ServiceInformation apply(RadioService svc) {
+                        boolean isDigital = svc instanceof DigitalRadioService;
+                        GainInformation gainInfo;
+                        if (svc instanceof AdjustableGainService adjustable)
+                            gainInfo = new GainInformation(adjustable.getMaxGain(), true);
+                        else
+                            gainInfo = new GainInformation(0, false);
+                        return new ServiceInformation(index++, svc.getName(),
+                                isDigital ? ServiceInformation.TUNING_TYPE_DIGITAL
+                                        : ServiceInformation.TUNING_TYPE_ANALOG,
+                                svc instanceof DigitalRadioService digital
+                                        ? new DigitalTuningInformation(List.of(digital.getStations()))
+                                        : null,
+                                svc instanceof AnalogRadioService analog
+                                        ? new AnalogTuningInformation(analog.getMinFrequency(),
+                                                analog.getMaxFrequency(), analog.getFrequencyStep())
+                                        : null,
+                                gainInfo);
+                    }
+                }).toList())).toList(), "A SpringFM instance", md.getAlgorithm());
     }
 
     private RadioProfile getProfile(String profile) {
