@@ -8,11 +8,11 @@ import io.github.defective4.sdr.rds.RDSFlags;
 import io.github.defective4.sdr.rds.RDSReceiver;
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.data.AudioAnnotation;
-import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
 import io.github.defective4.springfm.server.util.ScriptUtils;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class GnuRadioRDSProcessor implements StreamingAnnotationProcessor {
+public class GnuRadioRDSProcessor implements AudioAnnotationProcessor {
 
     private final AnnotationGenerator generator;
     private Process process;
@@ -83,7 +83,7 @@ public class GnuRadioRDSProcessor implements StreamingAnnotationProcessor {
     }
 
     @Override
-    public void write(byte[] data, int len) throws IOException {
+    public void writeAudioSample(byte[] data, int len) throws IOException {
         if (!isStarted()) throw new IllegalStateException("GnuRadio process is not started");
         processStream.write(data, 0, len);
     }

@@ -27,27 +27,27 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.github.defective4.springfm.backend.config.file.AudioFormatConfiguration;
+import io.github.defective4.springfm.backend.config.file.MainConfiguration;
 import io.github.defective4.springfm.backend.config.file.ProfileConfiguration;
 import io.github.defective4.springfm.backend.config.file.ServiceConfiguration;
-import io.github.defective4.springfm.backend.config.file.UserConfiguration;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
 import io.github.defective4.springfm.server.service.impl.BroadcastFMService;
 import io.javalin.json.JsonMapper;
 
-public class RadioConfiguration {
+public class ConfigurationReader {
 
     private static final File CONFIG_FILE = new File("springfm.json");
-    private final UserConfiguration config;
+    private final MainConfiguration config;
     private final Gson gson = new Gson();
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
 
-    public RadioConfiguration() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
+    public ConfigurationReader() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
             IllegalAccessException, InvocationTargetException, InstantiationException, IllegalArgumentException {
         if (!CONFIG_FILE.exists()) saveDefaultConfig();
         try (Reader reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
-            config = gson.fromJson(reader, UserConfiguration.class);
+            config = gson.fromJson(reader, MainConfiguration.class);
         }
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
             String name = entry.getKey();
@@ -89,7 +89,7 @@ public class RadioConfiguration {
         return Collections.unmodifiableMap(profiles);
     }
 
-    public UserConfiguration getConfig() {
+    public MainConfiguration getConfig() {
         return config;
     }
 
@@ -120,7 +120,7 @@ public class RadioConfiguration {
     }
 
     private static void saveDefaultConfig() throws IOException {
-        UserConfiguration config = new UserConfiguration(Map.of("default",
+        MainConfiguration config = new MainConfiguration(Map.of("default",
                 new ProfileConfiguration(List.of(new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
                         Map.of("name", "Broadcast FM", "lowerFreq", 87e6f, "upperFreq", 108e6f),
                         new AudioFormatConfiguration(44.1e3f, 1))))));

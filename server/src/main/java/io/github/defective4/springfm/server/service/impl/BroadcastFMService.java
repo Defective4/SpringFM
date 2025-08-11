@@ -15,7 +15,7 @@ import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
-import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
 import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
@@ -38,7 +38,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
 
     private Process radioProcess;
 
-    private final StreamingAnnotationProcessor rdsProcessor;
+    private final AudioAnnotationProcessor rdsProcessor;
 
     private final AudioResampler resampler;
     private final String sdrParams;
@@ -153,7 +153,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
                 byte[] buffer = new byte[4096];
                 while (isStarted()) {
                     inputStream.readFully(buffer);
-                    rdsProcessor.write(buffer, buffer.length);
+                    rdsProcessor.writeAudioSample(buffer, buffer.length);
                     resampler.write(buffer);
                 }
             } catch (Exception e) {

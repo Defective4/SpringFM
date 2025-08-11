@@ -2,10 +2,10 @@ package io.github.defective4.springfm.backend.config.file;
 
 import java.util.Map;
 
-public class UserConfiguration {
+public class MainConfiguration {
     private final Map<String, ProfileConfiguration> profiles;
 
-    public UserConfiguration(Map<String, ProfileConfiguration> profiles) {
+    public MainConfiguration(Map<String, ProfileConfiguration> profiles) {
         this.profiles = profiles;
     }
 

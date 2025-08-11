@@ -13,7 +13,7 @@ import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
-import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
 import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
@@ -33,7 +33,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final float maxFrequency;
     private final float minFrequency;
     private final String name;
-    private final StreamingAnnotationProcessor processor;
+    private final AudioAnnotationProcessor processor;
     private final AudioResampler resampler;
     private Process rtlFm;
     private final String rtlFmPath;
@@ -163,7 +163,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
                 while (isStarted()) {
                     fmInput.readFully(buffer);
                     resampler.write(buffer);
-                    processor.write(buffer, buffer.length);
+                    processor.writeAudioSample(buffer, buffer.length);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

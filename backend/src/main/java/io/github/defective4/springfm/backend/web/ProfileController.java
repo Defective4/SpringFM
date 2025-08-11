@@ -18,7 +18,7 @@ import javax.sound.sampled.AudioFormat;
 
 import com.google.gson.JsonObject;
 
-import io.github.defective4.springfm.backend.config.RadioConfiguration;
+import io.github.defective4.springfm.backend.config.ConfigurationReader;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.data.AnalogTuningInformation;
 import io.github.defective4.springfm.server.data.AuthResponse;
@@ -47,7 +47,7 @@ public class ProfileController {
     private final MessageDigest md;
     private final Map<String, RadioProfile> profiles;
 
-    public ProfileController(RadioConfiguration config) throws NoSuchAlgorithmException {
+    public ProfileController(ConfigurationReader config) throws NoSuchAlgorithmException {
         md = config.getMessageDigest();
         profiles = config.getAvailableProfiles();
         javalin = Javalin.create(cfg -> {

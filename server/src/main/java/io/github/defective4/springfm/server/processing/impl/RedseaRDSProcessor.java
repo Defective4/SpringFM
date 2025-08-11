@@ -13,10 +13,10 @@ import com.google.gson.JsonParser;
 
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.data.AudioAnnotation;
-import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
+public class RedseaRDSProcessor implements AudioAnnotationProcessor {
 
     private static final int sampleRateKHz = 171;
     private final AnnotationGenerator generator;
@@ -85,7 +85,7 @@ public class RedseaRDSProcessor implements StreamingAnnotationProcessor {
     }
 
     @Override
-    public void write(byte[] data, int len) throws IOException {
+    public void writeAudioSample(byte[] data, int len) throws IOException {
         os.write(data, 0, len);
     }
 
