@@ -73,8 +73,12 @@ public class ConfigurationReader {
                         } else if (argInfo.defaultValue().isEmpty())
                             val = null;
                         else {
-                            Method m = param.getType().getMethod("valueOf", String.class);
-                            val = m.invoke(null, argInfo.defaultValue());
+                            if (param.getType() == String.class) {
+                                val = argInfo.defaultValue();
+                            } else {
+                                Method m = param.getType().getMethod("valueOf", String.class);
+                                val = m.invoke(null, argInfo.defaultValue());
+                            }
                         }
                         args[i] = val;
                     }
