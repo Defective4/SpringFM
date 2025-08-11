@@ -10,6 +10,10 @@ import javax.sound.sampled.AudioFormat;
 
 import io.github.defective4.springfm.server.audio.AudioResampler;
 import io.github.defective4.springfm.server.packet.DataGenerator;
+import io.github.defective4.springfm.server.packet.Packet;
+import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
+import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
@@ -20,13 +24,14 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
 
     private DataInputStream fmInput;
     private final AudioFormat format;
-
     private float frequency;
+
     private float gain;
     private DataGenerator generator;
     private final float maxFrequency;
     private final float minFrequency;
     private final String name;
+    private final StreamingAnnotationProcessor processor;
     private final AudioResampler resampler;
     private Process rtlFm;
     private final String rtlFmPath;
@@ -42,6 +47,9 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
         this.rtlFmPath = rtlFmPath;
         this.minFrequency = minFrequency;
         this.maxFrequency = maxFrequency;
+        processor = new RedseaRDSProcessor(annotation -> {
+            if (generator != null) generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
+        }); // TODO
         frequency = getMinFrequency();
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data, len) -> {
             byte[] effective;
@@ -122,6 +130,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             if (rtlFm != null) rtlFm.destroyForcibly();
             if (fmInput != null) fmInput.close();
             if (task != null) task.cancel(true);
+            if (processor.isStarted()) processor.stop();
             resampler.stop();
         } finally {
             rtlFm = null;
@@ -139,6 +148,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private void tuneRtlFm() throws IOException {
         stop();
         resampler.start();
+        processor.start();
         rtlFm = ScriptUtils.startProcess(rtlFmPath,
                 new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k", "-g", gain, // TODO gain
                         "-E", "deemp", "-F", "9", "-A", "fast", "-" });
@@ -149,6 +159,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
                 while (isStarted()) {
                     fmInput.readFully(buffer);
                     resampler.write(buffer);
+                    processor.write(buffer, buffer.length);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
