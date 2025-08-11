@@ -51,6 +51,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             @ServiceArgument(name = "sdrParams") String sdrParams,
             @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
+        if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.format = Objects.requireNonNull(format);
         this.name = Objects.requireNonNull(name);
         this.lowerFreq = (float) (double) Objects.requireNonNull(lowerFreq);

@@ -47,6 +47,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Double maxFrequency,
             @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
+        if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.name = Objects.requireNonNull(name);
         this.format = format;
         this.rtlFmPath = rtlFmPath;
