@@ -146,6 +146,11 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             fmInput = null;
             task = null;
         }
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
