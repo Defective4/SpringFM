@@ -45,6 +45,10 @@ public class TestDigitalService implements DigitalRadioService {
     }
 
     @Override
+    public void setDebugMode(boolean debug) {
+    }
+
+    @Override
     public void setPacketGenerator(DataGenerator generator) {
     }
 

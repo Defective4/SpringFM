@@ -25,20 +25,21 @@ import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class BroadcastFMService implements AnalogRadioService, AdjustableGainService {
 
+    private boolean debug;
     private final AudioFormat format;
     private float freq;
     private float gain;
-    private DataGenerator generator;
 
+    private DataGenerator generator;
     private DataInputStream inputStream;
     private final float lowerFreq, upperFreq;
     private final String name;
+
     private DataOutputStream outputStream;
 
     private Process radioProcess;
 
     private final AudioAnnotationProcessor rdsProcessor;
-
     private final AudioResampler resampler;
     private final String sdrParams;
     private Future<?> task;
@@ -111,6 +112,11 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
     }
 
     @Override
+    public void setDebugMode(boolean debug) {
+        this.debug = debug;
+    }
+
+    @Override
     public void setGain(float gain) throws IOException {
         outputStream.writeFloat(2);
         outputStream.writeFloat(gain);
@@ -150,12 +156,12 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
                     resampler.write(buffer);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                if (debug) e.printStackTrace();
             } finally {
                 try {
                     stop();
                 } catch (Exception e2) {
-                    e2.printStackTrace();
+                    if (debug) e2.printStackTrace();
                 }
             }
         });

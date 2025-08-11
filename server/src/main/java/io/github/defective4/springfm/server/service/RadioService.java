@@ -13,6 +13,8 @@ public sealed interface RadioService permits DigitalRadioService, AnalogRadioSer
 
     boolean isStarted();
 
+    void setDebugMode(boolean debug);
+
     void setPacketGenerator(DataGenerator generator);
 
     void start() throws IOException;

@@ -41,9 +41,7 @@ public class AudioResampler {
                 AudioInputStream source = new AudioInputStream(audioIn, from, Long.MAX_VALUE);
                 AudioInputStream target = AudioSystem.getAudioInputStream(to, source);
                 AudioSystem.write(target, AudioFileFormat.Type.AU, audioOut);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) {}
         });
 
         readerTask = ThreadUtils.submit(() -> {
@@ -53,9 +51,7 @@ public class AudioResampler {
                     input.readFully(data);
                     generator.sampleGenerated(data);
                 }
-            } catch (Exception e2) {
-                e2.printStackTrace();
-            }
+            } catch (Exception e2) {}
         });
     }
 

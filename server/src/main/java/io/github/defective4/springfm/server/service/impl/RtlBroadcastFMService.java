@@ -23,10 +23,11 @@ import io.github.defective4.springfm.server.util.ThreadUtils;
 
 public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGainService {
 
+    private boolean debug;
     private DataInputStream fmInput;
     private final AudioFormat format;
-    private float frequency;
 
+    private float frequency;
     private float gain;
     private DataGenerator generator;
     private final float maxFrequency;
@@ -35,8 +36,8 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final AudioAnnotationProcessor processor;
     private final AudioResampler resampler;
     private Process rtlFm;
-    private final String rtlFmPath;
 
+    private final String rtlFmPath;
     private Future<?> task;
 
     public RtlBroadcastFMService(@ServiceArgument(name = "name") String name,
@@ -106,6 +107,11 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     }
 
     @Override
+    public void setDebugMode(boolean debug) {
+        this.debug = debug;
+    }
+
+    @Override
     public void setGain(float gain) throws IOException, IllegalArgumentException {
         this.gain = gain;
         tuneRtlFm();
@@ -159,7 +165,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
                     processor.writeAudioSample(buffer, buffer.length);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                if (debug) e.printStackTrace();
             }
         });
     }

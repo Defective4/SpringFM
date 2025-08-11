@@ -79,7 +79,9 @@ public class ConfigurationReader {
                         args[i] = val;
                     }
                 }
-                services.add((RadioService) constructor.newInstance(args));
+                RadioService service = (RadioService) constructor.newInstance(args);
+                service.setDebugMode(config.isDebug());
+                boolean b = services.add(service);
             }
             profiles.put(name, new RadioProfile(services));
         }
@@ -123,7 +125,8 @@ public class ConfigurationReader {
         MainConfiguration config = new MainConfiguration(Map.of("default",
                 new ProfileConfiguration(List.of(new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
                         Map.of("name", "Broadcast FM", "lowerFreq", 87e6f, "upperFreq", 108e6f),
-                        new AudioFormatConfiguration(44.1e3f, 1))))));
+                        new AudioFormatConfiguration(44.1e3f, 1))))),
+                true);
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
         }
