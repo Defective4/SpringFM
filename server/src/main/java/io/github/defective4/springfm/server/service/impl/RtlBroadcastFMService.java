@@ -1,7 +1,13 @@
 package io.github.defective4.springfm.server.service.impl;
 
+import static io.github.defective4.springfm.server.util.DependencyUtils.*;
+
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
@@ -35,9 +41,10 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final float minFrequency;
     private final String name;
     private final AudioAnnotationProcessor processor;
+    private final RDSProcessor processorType;
     private final AudioResampler resampler;
-    private Process rtlFm;
 
+    private Process rtlFm;
     private final String rtlFmPath;
     private Future<?> task;
 
@@ -47,6 +54,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Double maxFrequency,
             @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
+        this.processorType = processorType;
         if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.name = Objects.requireNonNull(name);
         this.format = format;
@@ -65,6 +73,24 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data) -> {
             generator.audioSampleGenerated(data, true);
         });
+    }
+
+    @Override
+    public Collection<String> checkMissingDependencies() {
+        List<String> missing = new ArrayList<>();
+        if (!checkRtlFm(rtlFmPath)) missing.add("rtl_fm");
+        switch (processorType) {
+            case REDSEA -> {
+                if (!checkRedsea()) missing.add("redsea");
+            }
+            case GR_RDS -> {
+                if (!checkPython3()) missing.add("python3");
+                if (!checkGnuRadio()) missing.add("gnuradio");
+                if (!checkGnuRadioRDS()) missing.add("gr-rds");
+            }
+            default -> {}
+        }
+        return Collections.unmodifiableList(missing);
     }
 
     @Override

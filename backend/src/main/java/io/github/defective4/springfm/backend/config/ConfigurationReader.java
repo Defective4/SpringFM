@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ public class ConfigurationReader {
         try (Reader reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
             config = gson.fromJson(reader, MainConfiguration.class);
         }
+        System.err.println("Loading services...");
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
             String name = entry.getKey();
             ProfileConfiguration profileConfig = entry.getValue();
@@ -87,10 +89,24 @@ public class ConfigurationReader {
                     }
                 }
                 RadioService service = (RadioService) constructor.newInstance(args);
+                Collection<String> missing = service.checkMissingDependencies();
+                System.err.println("Instantiated service \"" + service.getName() + "\" ("
+                        + service.getClass().getSimpleName() + "), checking its dependencies...");
+                if (!missing.isEmpty()) {
+                    System.err.println("Couldn't create service \"" + service.getName()
+                            + "\", because some of its dependencies are missing or misconfigured.");
+                    System.err.println("Missing dependencies:");
+                    missing.forEach(p -> System.err.println(" - " + p));
+                    System.err.println("Install or configure the dependencies and try again.");
+                    System.exit(7);
+                    return;
+                }
                 service.setDebugMode(config.isDebug());
                 boolean b = services.add(service);
             }
             profiles.put(name, new RadioProfile(services));
+            System.err.println("Loaded " + profiles.size() + " profiles with "
+                    + profiles.values().stream().mapToInt(p -> p.getServices().size()).sum() + " total services.");
         }
     }
 
@@ -133,7 +149,7 @@ public class ConfigurationReader {
                 new ProfileConfiguration(List.of(new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
                         Map.of("name", "Broadcast FM", "lowerFreq", 87e6f, "upperFreq", 108e6f),
                         new AudioFormatConfiguration(44.1e3f, 1))))),
-                true);
+                false);
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
         }

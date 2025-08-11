@@ -1,6 +1,8 @@
 package io.github.defective4.springfm.server.service.impl;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -17,6 +19,11 @@ public class TestDigitalService implements DigitalRadioService {
 
     public TestDigitalService(AudioFormat format) {
         this.format = format;
+    }
+
+    @Override
+    public Collection<String> checkMissingDependencies() {
+        return Collections.emptyList();
     }
 
     @Override

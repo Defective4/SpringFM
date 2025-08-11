@@ -1,8 +1,14 @@
 package io.github.defective4.springfm.server.service.impl;
 
+import static io.github.defective4.springfm.server.util.DependencyUtils.*;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -21,6 +27,7 @@ import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
+import io.github.defective4.springfm.server.util.DependencyUtils;
 import io.github.defective4.springfm.server.util.ScriptUtils;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
@@ -38,8 +45,9 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
 
     private DataOutputStream outputStream;
 
-    private Process radioProcess;
+    private final RDSProcessor processorType;
 
+    private Process radioProcess;
     private final AudioAnnotationProcessor rdsProcessor;
     private final AudioResampler resampler;
     private final String sdrParams;
@@ -51,6 +59,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             @ServiceArgument(name = "sdrParams") String sdrParams,
             @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
+        this.processorType = processorType;
         if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.format = Objects.requireNonNull(format);
         this.name = Objects.requireNonNull(name);
@@ -69,6 +78,23 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             case REDSEA -> new RedseaRDSProcessor(annotationGenerator);
             default -> null;
         };
+    }
+
+    @Override
+    public Collection<String> checkMissingDependencies() {
+        List<String> missing = new ArrayList<>();
+        if (!DependencyUtils.checkPython3()) missing.add("python3");
+        if (!checkGnuRadio()) missing.add("gnuradio");
+        switch (processorType) {
+            case REDSEA -> {
+                if (!checkRedsea()) missing.add("redsea");
+            }
+            case GR_RDS -> {
+                if (!checkGnuRadioRDS()) missing.add("gr-rds");
+            }
+            default -> {}
+        }
+        return Collections.unmodifiableList(missing);
     }
 
     @Override
@@ -196,5 +222,4 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
         outputStream.flush();
         this.freq = freq;
     }
-
 }

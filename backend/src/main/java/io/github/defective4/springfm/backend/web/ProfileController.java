@@ -1,8 +1,6 @@
 package io.github.defective4.springfm.backend.web;
 
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.path;
-import static io.javalin.apibuilder.ApiBuilder.post;
+import static io.javalin.apibuilder.ApiBuilder.*;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

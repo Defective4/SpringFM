@@ -47,6 +47,8 @@
                                 <argument>src/main/grc/pcm_stdout.grc</argument>
                                 <argument>src/main/grc/rds_processor.grc</argument>
                                 <argument>src/main/grc/wbfm_rx.grc</argument>
+                                <argument>src/main/grc/gr_check.grc</argument>
+                                <argument>src/main/grc/gr_rds_check.grc</argument>
                             </arguments>
                         </configuration>
                     </execution>
