@@ -2,7 +2,6 @@ package io.github.defective4.springfm.server.service.impl;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
@@ -56,14 +55,8 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
         };
         processor = useRedsea ? new RedseaRDSProcessor(ag) : new GnuRadioRDSProcessor(ag, (int) (double) grRdsPort);
         frequency = getMinFrequency();
-        resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data, len) -> {
-            byte[] effective;
-            if (data.length == len) {
-                effective = data;
-            } else {
-                effective = Arrays.copyOf(data, len);
-            }
-            generator.audioSampleGenerated(effective, true);
+        resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data) -> {
+            generator.audioSampleGenerated(data, true);
         });
     }
 

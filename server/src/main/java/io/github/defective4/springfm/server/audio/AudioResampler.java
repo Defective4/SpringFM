@@ -51,7 +51,7 @@ public class AudioResampler {
                 byte[] data = new byte[4096];
                 while (true) {
                     input.readFully(data);
-                    generator.sampleGenerated(data, data.length);
+                    generator.sampleGenerated(data);
                 }
             } catch (Exception e2) {
                 e2.printStackTrace();
