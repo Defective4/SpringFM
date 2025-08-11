@@ -1,5 +1,9 @@
 package io.github.defective4.springfm.backend.web;
 
+import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.path;
+import static io.javalin.apibuilder.ApiBuilder.post;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,7 +54,27 @@ public class ProfileController {
         javalin = Javalin.create(cfg -> {
             cfg.jsonMapper(config.getGsonMapper());
             cfg.validation.register(RadioProfile.class, profiles::get);
+            cfg.router.apiBuilder(() -> {
+                path("/profile/{profile}", () -> {
+                    post("/gain", ctx -> ctx.result(adjustGain(ctx)));
+                    post("/service", ctx -> ctx.result(setService(ctx)));
+                    path("/tune", () -> {
+                        post("/digital", ctx -> ctx.result(digitalTune(ctx)));
+                        post("/analog", ctx -> ctx.result(analogTune(ctx)));
+                    });
+                    get("/data", ctx -> dataStream(ctx));
+                    get("/audio", ctx -> audioStream(ctx));
+                });
+            });
         });
+
+        javalin.get("/auth", ctx -> ctx.json(auth()));
+
+        javalin.exception(IllegalArgumentException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
+        javalin.exception(IllegalStateException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
+        javalin.exception(ProfileNotFoundException.class, (ex, ctx) -> ctx.result(profileNotFound(ex)));
+        javalin.exception(IOException.class, (ex, ctx) -> ctx.result(serverError(ex)));
+        javalin.exception(ValidationException.class, (ex, ctx) -> ctx.result(validationException(ex)));
     }
 
     public String adjustGain(Context ctx) throws IllegalArgumentException, IOException {
@@ -219,22 +243,6 @@ public class ProfileController {
     }
 
     public void start(int port) {
-
-        javalin.exception(IllegalArgumentException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
-        javalin.exception(IllegalStateException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
-        javalin.exception(ProfileNotFoundException.class, (ex, ctx) -> ctx.result(profileNotFound(ex)));
-        javalin.exception(IOException.class, (ex, ctx) -> ctx.result(serverError(ex)));
-        javalin.exception(ValidationException.class, (ex, ctx) -> ctx.result(validationException(ex)));
-
-        javalin.get("/auth", ctx -> ctx.json(auth()));
-        javalin.post("/profile/{profile}/gain", ctx -> ctx.result(adjustGain(ctx)));
-        javalin.post("/profile/{profile}/service", ctx -> ctx.result(setService(ctx)));
-        javalin.post("/profile/{profile}/tune/digital", ctx -> ctx.result(digitalTune(ctx)));
-        javalin.post("/profile/{profile}/tune/analog", ctx -> ctx.result(analogTune(ctx)));
-
-        javalin.get("/profile/{profile}/data", ctx -> dataStream(ctx));
-        javalin.get("/profile/{profile}/audio", ctx -> audioStream(ctx));
-
         javalin.start("0.0.0.0", port);
     }
 
