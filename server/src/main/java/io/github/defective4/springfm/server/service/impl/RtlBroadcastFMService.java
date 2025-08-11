@@ -9,10 +9,12 @@ import java.util.concurrent.Future;
 import javax.sound.sampled.AudioFormat;
 
 import io.github.defective4.springfm.server.audio.AudioResampler;
+import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.StreamingAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
@@ -40,16 +42,19 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
 
     public RtlBroadcastFMService(@ServiceArgument(name = "name") String name,
             @ServiceArgument(name = "rtlFmPath", defaultValue = "rtl_fm") String rtlFmPath,
-            @ServiceArgument(name = "minFrequency", defaultValue = "87e6") Float minFrequency,
-            @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Float maxFrequency, AudioFormat format) {
+            @ServiceArgument(name = "minFrequency", defaultValue = "87e6") Double minFrequency,
+            @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Double maxFrequency,
+            @ServiceArgument(name = "useRedsea", defaultValue = "true") Boolean useRedsea,
+            @ServiceArgument(name = "grRdsPort", defaultValue = "-1") Double grRdsPort, AudioFormat format) {
         this.name = Objects.requireNonNull(name);
         this.format = format;
         this.rtlFmPath = rtlFmPath;
-        this.minFrequency = minFrequency;
-        this.maxFrequency = maxFrequency;
-        processor = new RedseaRDSProcessor(annotation -> {
+        this.minFrequency = Objects.requireNonNull((float) (double) minFrequency);
+        this.maxFrequency = Objects.requireNonNull((float) (double) maxFrequency);
+        AnnotationGenerator ag = annotation -> {
             if (generator != null) generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
-        }); // TODO
+        };
+        processor = useRedsea ? new RedseaRDSProcessor(ag) : new GnuRadioRDSProcessor(ag, (int) (double) grRdsPort);
         frequency = getMinFrequency();
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data, len) -> {
             byte[] effective;
@@ -149,9 +154,8 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
         stop();
         resampler.start();
         processor.start();
-        rtlFm = ScriptUtils.startProcess(rtlFmPath,
-                new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k", "-g", gain, // TODO gain
-                        "-E", "deemp", "-F", "9", "-A", "fast", "-" });
+        rtlFm = ScriptUtils.startProcess(rtlFmPath, new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k",
+                "-g", gain, "-E", "deemp", "-F", "9", "-A", "fast", "-" });
         fmInput = new DataInputStream(rtlFm.getInputStream());
         task = ThreadUtils.submit(() -> {
             try {
