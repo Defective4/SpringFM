@@ -10,12 +10,13 @@ import javax.sound.sampled.AudioFormat;
 
 import io.github.defective4.springfm.server.audio.AudioResampler;
 import io.github.defective4.springfm.server.packet.DataGenerator;
+import io.github.defective4.springfm.server.service.AdjustableGainService;
 import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
 import io.github.defective4.springfm.server.util.ScriptUtils;
 import io.github.defective4.springfm.server.util.ThreadUtils;
 
-public class RtlBroadcastFMService implements AnalogRadioService {
+public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGainService {
 
     private DataInputStream fmInput;
     private final AudioFormat format;
@@ -123,7 +124,7 @@ public class RtlBroadcastFMService implements AnalogRadioService {
         stop();
         resampler.start();
         rtlFm = ScriptUtils.startProcess(rtlFmPath,
-                new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k", "-g", "24", // TODO gain
+                new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k", "-g", gain, // TODO gain
                         "-E", "deemp", "-F", "9", "-A", "fast", "-" });
         fmInput = new DataInputStream(rtlFm.getInputStream());
         task = ThreadUtils.submit(() -> {
@@ -139,4 +140,21 @@ public class RtlBroadcastFMService implements AnalogRadioService {
         });
     }
 
+    private float gain;
+
+    @Override
+    public float getCurrentGain() {
+        return gain;
+    }
+
+    @Override
+    public float getMaxGain() {
+        return 49.6f;
+    }
+
+    @Override
+    public void setGain(float gain) throws IOException, IllegalArgumentException {
+        this.gain = gain;
+        tuneRtlFm();
+    }
 }

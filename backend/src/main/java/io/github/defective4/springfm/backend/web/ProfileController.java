@@ -79,7 +79,7 @@ public class ProfileController {
 
     public String adjustGain(Context ctx) throws IllegalArgumentException, IOException {
         RadioProfile prof = getProfile(ctx);
-        float gain = ctx.formParamAsClass("gain", Float.class).get();
+        float gain = ctx.formParamAsClass("gain", Float.class).check(val -> val >= 0, "Gain can't be negative").get();
 
         RadioService service = getCurrentService(prof);
         if (service instanceof AdjustableGainService adjustable) {
