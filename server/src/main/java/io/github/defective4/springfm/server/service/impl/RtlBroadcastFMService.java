@@ -22,6 +22,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final AudioFormat format;
 
     private float frequency;
+    private float gain;
     private DataGenerator generator;
     private final float maxFrequency;
     private final float minFrequency;
@@ -29,6 +30,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final AudioResampler resampler;
     private Process rtlFm;
     private final String rtlFmPath;
+
     private Future<?> task;
 
     public RtlBroadcastFMService(@ServiceArgument(name = "name") String name,
@@ -63,6 +65,11 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     }
 
     @Override
+    public float getCurrentGain() {
+        return gain;
+    }
+
+    @Override
     public float getFrequencyStep() {
         return 100e3f;
     }
@@ -70,6 +77,11 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     @Override
     public float getMaxFrequency() {
         return maxFrequency;
+    }
+
+    @Override
+    public float getMaxGain() {
+        return 49.6f;
     }
 
     @Override
@@ -85,6 +97,12 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     @Override
     public boolean isStarted() {
         return rtlFm != null && rtlFm.isAlive() && task != null && !task.isCancelled();
+    }
+
+    @Override
+    public void setGain(float gain) throws IOException, IllegalArgumentException {
+        this.gain = gain;
+        tuneRtlFm();
     }
 
     @Override
@@ -114,8 +132,6 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
 
     @Override
     public void tune(float freq) throws IllegalArgumentException, IOException {
-        if (freq < getMinFrequency() || freq > getMaxFrequency())
-            throw new IllegalArgumentException("Frequency out of bounds");
         frequency = freq;
         tuneRtlFm();
     }
@@ -138,23 +154,5 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
                 e.printStackTrace();
             }
         });
-    }
-
-    private float gain;
-
-    @Override
-    public float getCurrentGain() {
-        return gain;
-    }
-
-    @Override
-    public float getMaxGain() {
-        return 49.6f;
-    }
-
-    @Override
-    public void setGain(float gain) throws IOException, IllegalArgumentException {
-        this.gain = gain;
-        tuneRtlFm();
     }
 }

@@ -19,7 +19,6 @@ import javax.sound.sampled.AudioFormat;
 import com.google.gson.JsonObject;
 
 import io.github.defective4.springfm.backend.config.RadioConfiguration;
-import io.github.defective4.springfm.backend.exception.ProfileNotFoundException;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.data.AnalogTuningInformation;
 import io.github.defective4.springfm.server.data.AuthResponse;
@@ -72,7 +71,6 @@ public class ProfileController {
 
         javalin.exception(IllegalArgumentException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
         javalin.exception(IllegalStateException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
-        javalin.exception(ProfileNotFoundException.class, (ex, ctx) -> ctx.result(profileNotFound(ex)));
         javalin.exception(IOException.class, (ex, ctx) -> ctx.result(serverError(ex)));
         javalin.exception(ValidationException.class, (ex, ctx) -> ctx.result(validationException(ex)));
     }
@@ -84,6 +82,7 @@ public class ProfileController {
         RadioService service = getCurrentService(prof);
         if (service instanceof AdjustableGainService adjustable) {
             if (adjustable.getCurrentGain() == gain) return "Not changed";
+            if (gain > adjustable.getMaxGain()) throw new IllegalArgumentException("Gain value out of bounds.");
             adjustable.setGain(gain);
             prof.broadcastPacket(new Packet(new PlayerCommandPayload(
                     new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN, Float.toString(gain)))));
@@ -98,6 +97,8 @@ public class ProfileController {
         RadioService service = getCurrentService(prof);
         if (service instanceof AnalogRadioService analog) {
             float absoluteFreq = frequency * analog.getFrequencyStep();
+            if (absoluteFreq > analog.getMaxFrequency() || absoluteFreq < analog.getMinFrequency())
+                throw new IllegalArgumentException("Frequency is out of range");
             if (analog.getCurrentFrequency() == absoluteFreq) return "Not changed";
             analog.tune(absoluteFreq);
             prof.broadcastPacket(new Packet(new PlayerCommandPayload(
@@ -181,10 +182,13 @@ public class ProfileController {
 
     public String digitalTune(Context ctx) throws IllegalArgumentException, IOException {
         RadioProfile prof = getProfile(ctx);
-        int index = ctx.formParamAsClass("index", Integer.class).get();
+        int index = ctx.formParamAsClass("index", Integer.class).check(ix -> ix >= 0, "Station index can't be negative")
+                .get();
         RadioService service = getCurrentService(prof);
         if (service instanceof DigitalRadioService digital) {
             if (digital.getCurrentStation() == index) return "Not changed";
+            if (index >= digital.getStations().length)
+                throw new IllegalArgumentException("Station index out of bounds.");
             digital.tune(index);
             prof.broadcastPacket(new Packet(new PlayerCommandPayload(
                     new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE, Integer.toString(index)))));
@@ -194,16 +198,12 @@ public class ProfileController {
     }
 
     public String illegalArgument(Exception e) {
-        return e.getMessage();
-    }
-
-    public String profileNotFound(ProfileNotFoundException e) {
-        return String.format("Sorry, profile \"%s\" was not found.", e.getInvalidProfile());
+        return getErrorJson(e.getMessage());
     }
 
     public String serverError(IOException e) {
         e.printStackTrace();
-        return "There was an error on the server side";
+        return getErrorJson("There was an error on the server side.");
     }
 
     public String setService(Context ctx) throws IOException {
@@ -289,7 +289,15 @@ public class ProfileController {
         return prof.getServices().get(svc);
     }
 
+    private static String getErrorJson(String message) {
+        JsonObject errorObject = new JsonObject();
+        errorObject.addProperty("error", message);
+        return errorObject.toString();
+    }
+
     private static RadioProfile getProfile(Context ctx) {
-        return ctx.pathParamAsClass("profile", RadioProfile.class).getOrThrow(map -> new ProfileNotFoundException(ctx));
+        return ctx.pathParamAsClass("profile", RadioProfile.class).getOrThrow(map -> {
+            return new IllegalArgumentException("Profile \"" + ctx.pathParam("profile") + "\" was not found.");
+        });
     }
 }

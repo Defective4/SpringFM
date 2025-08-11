@@ -119,7 +119,6 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
 
     @Override
     public void setGain(float gain) throws IOException {
-        if (gain < 0 || gain > getMaxGain()) throw new IllegalArgumentException("Gain out of range");
         outputStream.writeFloat(2);
         outputStream.writeFloat(gain);
         outputStream.flush();
@@ -188,8 +187,6 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
 
     @Override
     public synchronized void tune(float freq) throws IllegalArgumentException, IOException {
-        if (freq < getMinFrequency() || freq > getMaxFrequency())
-            throw new IllegalArgumentException("Frequency out of range");
         outputStream.writeFloat(1);
         outputStream.writeFloat(freq);
         outputStream.flush();
