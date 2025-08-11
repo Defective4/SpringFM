@@ -1,11 +1,18 @@
 package io.github.defective4.springfm.backend;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import io.github.defective4.springfm.backend.config.RadioConfiguration;
+import io.github.defective4.springfm.backend.web.ProfileController;
+import io.javalin.http.Context;
 
-@SpringBootApplication
 public class Main {
     public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+        try {
+            ProfileController controller = new ProfileController(new RadioConfiguration());
+            controller.start(8080);
+            Context ctx;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

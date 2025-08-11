@@ -2,26 +2,19 @@ package io.github.defective4.springfm.backend.web;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 import javax.sound.sampled.AudioFormat;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import com.google.gson.JsonObject;
 
-import io.github.defective4.springfm.backend.Main;
+import io.github.defective4.springfm.backend.config.RadioConfiguration;
 import io.github.defective4.springfm.backend.exception.ProfileNotFoundException;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.data.AnalogTuningInformation;
@@ -39,25 +32,31 @@ import io.github.defective4.springfm.server.service.AnalogRadioService;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.util.AudioUtils;
+import io.javalin.Javalin;
+import io.javalin.http.ContentType;
+import io.javalin.http.Context;
+import io.javalin.validation.ValidationError;
+import io.javalin.validation.ValidationException;
 
-@RestController
 public class ProfileController {
 
-    private final Main main;
-
+    private final Javalin javalin;
     private final MessageDigest md;
     private final Map<String, RadioProfile> profiles;
 
-    public ProfileController(Map<String, RadioProfile> profiles, Main main, MessageDigest md) {
-        this.profiles = profiles;
-        this.main = main;
-        this.md = md;
+    public ProfileController(RadioConfiguration config) throws NoSuchAlgorithmException {
+        md = config.getMessageDigest();
+        profiles = config.getAvailableProfiles();
+        javalin = Javalin.create(cfg -> {
+            cfg.jsonMapper(config.getGsonMapper());
+            cfg.validation.register(RadioProfile.class, profiles::get);
+        });
     }
 
-    @PostMapping(path = "/profile/{profile}/gain")
-    public String adjustGain(@PathVariable String profile, @RequestParam float gain)
-            throws IllegalArgumentException, IOException {
-        RadioProfile prof = getProfile(profile);
+    public String adjustGain(Context ctx) throws IllegalArgumentException, IOException {
+        RadioProfile prof = getProfile(ctx);
+        float gain = ctx.formParamAsClass("gain", Float.class).get();
+
         RadioService service = getCurrentService(prof);
         if (service instanceof AdjustableGainService adjustable) {
             if (adjustable.getCurrentGain() == gain) return "Not changed";
@@ -69,10 +68,9 @@ public class ProfileController {
         throw new IllegalStateException("This service does not support gain adjusting");
     }
 
-    @PostMapping(path = "/profile/{profile}/tune/analog")
-    public String analogTune(@PathVariable String profile, @RequestParam int frequency)
-            throws IllegalArgumentException, IOException {
-        RadioProfile prof = getProfile(profile);
+    public String analogTune(Context ctx) throws IllegalArgumentException, IOException {
+        RadioProfile prof = getProfile(ctx);
+        int frequency = ctx.formParamAsClass("frequency", Integer.class).get();
         RadioService service = getCurrentService(prof);
         if (service instanceof AnalogRadioService analog) {
             float absoluteFreq = frequency * analog.getFrequencyStep();
@@ -85,9 +83,10 @@ public class ProfileController {
         throw new IllegalStateException("This service does not support analog tuning.");
     }
 
-    @GetMapping(path = "/profile/{profile}/audio")
-    public ResponseEntity<StreamingResponseBody> audioStream(@PathVariable String profile) {
-        RadioProfile prof = getProfile(profile);
+    public void audioStream(Context ctx) throws IOException {
+        RadioProfile prof = getProfile(ctx);
+        ctx.contentType(ContentType.AUDIO_WAV);
+        OutputStream out = ctx.res().getOutputStream();
         int index = prof.getCurrentService();
         AudioFormat fmt;
         if (index < 0) {
@@ -96,68 +95,69 @@ public class ProfileController {
             fmt = prof.getServices().get(index).getAudioFormat();
         }
 
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType("audio/wav")).body(out -> {
-            DataOutputStream dout = new DataOutputStream(out);
-            dout.write(AudioUtils.createWavHeader(fmt));
-            dout.flush();
-            prof.addAudioClient(out);
-            Object lock = new Object();
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {}
-            }
-        });
+        DataOutputStream dout = new DataOutputStream(out);
+        dout.write(AudioUtils.createWavHeader(fmt));
+        dout.flush();
+        prof.addAudioClient(out);
+
+        while (true) {
+            try {
+                Thread.sleep(1000);
+                if (!prof.hasConnectedAudioClient(out)) {
+                    return;
+                }
+            } catch (InterruptedException e) {}
+        }
     }
 
-    @GetMapping(path = "/auth")
     public AuthResponse auth() {
         return getAuthResponse();
     }
 
-    @GetMapping(path = "/profile/{profile}/data")
-    public ResponseEntity<StreamingResponseBody> dataStream(@PathVariable String profile) {
-        RadioProfile prof = getProfile(profile);
+    public void dataStream(Context ctx) throws IOException {
+        RadioProfile prof = getProfile(ctx);
 
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM).body(out -> {
-            DataOutputStream os = new DataOutputStream(out);
-            byte[] hash = getAuthResponse().hash(md);
-            os.writeInt(hash.length);
-            os.write(hash);
-            prof.addDataClient(os);
+        ctx.contentType(ContentType.APPLICATION_OCTET_STREAM);
+        OutputStream out = ctx.res().getOutputStream();
+        DataOutputStream os = new DataOutputStream(out);
+        byte[] hash = getAuthResponse().hash(md);
+        os.writeInt(hash.length);
+        os.write(hash);
+        prof.addDataClient(os);
 
-            new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE,
-                    Integer.toString(prof.getCurrentService())))).toStream(os);
-            if (prof.getCurrentService() >= 0) {
-                RadioService svc = prof.getServices().get(prof.getCurrentService());
-                if (svc instanceof DigitalRadioService digital) {
-                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
-                            Integer.toString(digital.getCurrentStation())))).toStream(os);
-                } else if (svc instanceof AnalogRadioService analog) {
-                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE,
-                            Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep())))))
-                            .toStream(os);
-                }
-
-                if (svc instanceof AdjustableGainService adjustable) {
-                    new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
-                            Float.toString(adjustable.getCurrentGain())))).toStream(os);
-                }
+        new Packet(new PlayerCommandPayload(
+                new PlayerCommand(PlayerCommand.COMMAND_CHANGE_SERVICE, Integer.toString(prof.getCurrentService()))))
+                .toStream(os);
+        if (prof.getCurrentService() >= 0) {
+            RadioService svc = prof.getServices().get(prof.getCurrentService());
+            if (svc instanceof DigitalRadioService digital) {
+                new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_DIGITAL_TUNE,
+                        Integer.toString(digital.getCurrentStation())))).toStream(os);
+            } else if (svc instanceof AnalogRadioService analog) {
+                new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ANALOG_TUNE,
+                        Integer.toString((int) (analog.getCurrentFrequency() / analog.getFrequencyStep())))))
+                        .toStream(os);
             }
-            os.flush();
-            Object lock = new Object();
-            synchronized (lock) {
-                try {
-                    lock.wait();
-                } catch (InterruptedException e) {}
+
+            if (svc instanceof AdjustableGainService adjustable) {
+                new Packet(new PlayerCommandPayload(new PlayerCommand(PlayerCommand.COMMAND_ADJUST_GAIN,
+                        Float.toString(adjustable.getCurrentGain())))).toStream(os);
             }
-        });
+        }
+        os.flush();
+        while (true) {
+            try {
+                Thread.sleep(1000);
+                if (!prof.hasConnectedDataClient(os)) {
+                    return;
+                }
+            } catch (InterruptedException e) {}
+        }
     }
 
-    @PostMapping(path = "/profile/{profile}/tune/digital")
-    public String digitalTune(@PathVariable String profile, @RequestParam int index)
-            throws IllegalArgumentException, IOException {
-        RadioProfile prof = getProfile(profile);
+    public String digitalTune(Context ctx) throws IllegalArgumentException, IOException {
+        RadioProfile prof = getProfile(ctx);
+        int index = ctx.formParamAsClass("index", Integer.class).get();
         RadioService service = getCurrentService(prof);
         if (service instanceof DigitalRadioService digital) {
             if (digital.getCurrentStation() == index) return "Not changed";
@@ -169,28 +169,22 @@ public class ProfileController {
         throw new IllegalStateException("This service does not support digital tuning.");
     }
 
-    @ExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String illegalArgument(Exception e) {
         return e.getMessage();
     }
 
-    @ExceptionHandler(ProfileNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
     public String profileNotFound(ProfileNotFoundException e) {
         return String.format("Sorry, profile \"%s\" was not found.", e.getInvalidProfile());
     }
 
-    @ExceptionHandler(IOException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String serverError(IOException e) {
         e.printStackTrace();
         return "There was an error on the server side";
     }
 
-    @PostMapping(path = "/profile/{profile}/service")
-    public String setService(@PathVariable String profile, @RequestParam int index) throws IOException {
-        RadioProfile prof = getProfile(profile);
+    public String setService(Context ctx) throws IOException {
+        RadioProfile prof = getProfile(ctx);
+        int index = ctx.formParamAsClass("index", Integer.class).get();
         if (prof.getCurrentService() == index) {
             return "Not changed";
         }
@@ -224,6 +218,35 @@ public class ProfileController {
         return "Ok";
     }
 
+    public void start(int port) {
+
+        javalin.exception(IllegalArgumentException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
+        javalin.exception(IllegalStateException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
+        javalin.exception(ProfileNotFoundException.class, (ex, ctx) -> ctx.result(profileNotFound(ex)));
+        javalin.exception(IOException.class, (ex, ctx) -> ctx.result(serverError(ex)));
+        javalin.exception(ValidationException.class, (ex, ctx) -> ctx.result(validationException(ex)));
+
+        javalin.get("/auth", ctx -> ctx.json(auth()));
+        javalin.post("/profile/{profile}/gain", ctx -> ctx.result(adjustGain(ctx)));
+        javalin.post("/profile/{profile}/service", ctx -> ctx.result(setService(ctx)));
+        javalin.post("/profile/{profile}/tune/digital", ctx -> ctx.result(digitalTune(ctx)));
+        javalin.post("/profile/{profile}/tune/analog", ctx -> ctx.result(analogTune(ctx)));
+
+        javalin.get("/profile/{profile}/data", ctx -> dataStream(ctx));
+        javalin.get("/profile/{profile}/audio", ctx -> audioStream(ctx));
+
+        javalin.start("0.0.0.0", port);
+    }
+
+    public String validationException(ValidationException ex) {
+        JsonObject obj = new JsonObject();
+        for (Entry<String, List<ValidationError<Object>>> entry : ex.getErrors().entrySet()) {
+            obj.addProperty("field", entry.getKey());
+            if (!entry.getValue().isEmpty()) obj.addProperty("error", entry.getValue().get(0).getMessage());
+        }
+        return obj.toString();
+    }
+
     private AuthResponse getAuthResponse() {
         return new AuthResponse(profiles.entrySet().stream().map(profile -> new ProfileInformation(profile.getKey(),
                 profile.getValue().getServices().stream().map(new Function<RadioService, ServiceInformation>() {
@@ -252,15 +275,13 @@ public class ProfileController {
                 }).toList())).toList(), "A SpringFM instance", md.getAlgorithm());
     }
 
-    private RadioProfile getProfile(String profile) {
-        RadioProfile prof = profiles.get(profile);
-        if (prof == null) throw new ProfileNotFoundException(profile);
-        return prof;
-    }
-
     private static RadioService getCurrentService(RadioProfile prof) {
         int svc = prof.getCurrentService();
         if (svc < 0) throw new IllegalStateException("This profile has no started service.");
         return prof.getServices().get(svc);
+    }
+
+    private static RadioProfile getProfile(Context ctx) {
+        return ctx.pathParamAsClass("profile", RadioProfile.class).getOrThrow(map -> new ProfileNotFoundException(ctx));
     }
 }

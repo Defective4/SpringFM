@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,9 +23,6 @@ import java.util.Map.Entry;
 
 import javax.sound.sampled.AudioFormat;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -36,19 +34,17 @@ import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
 import io.github.defective4.springfm.server.service.impl.BroadcastFMService;
+import io.javalin.json.JsonMapper;
 
-@Configuration
 public class RadioConfiguration {
 
     private static final File CONFIG_FILE = new File("springfm.json");
     private final UserConfiguration config;
-    private final Gson gson;
+    private final Gson gson = new Gson();
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
 
-    public RadioConfiguration(Gson gson)
-            throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
+    public RadioConfiguration() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
             IllegalAccessException, InvocationTargetException, InstantiationException, IllegalArgumentException {
-        this.gson = gson;
         if (!CONFIG_FILE.exists()) saveDefaultConfig();
         try (Reader reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
             config = gson.fromJson(reader, UserConfiguration.class);
@@ -89,6 +85,10 @@ public class RadioConfiguration {
         }
     }
 
+    public Map<String, RadioProfile> getAvailableProfiles() {
+        return Collections.unmodifiableMap(profiles);
+    }
+
     public UserConfiguration getConfig() {
         return config;
     }
@@ -97,13 +97,25 @@ public class RadioConfiguration {
         return gson;
     }
 
-    @Bean
-    Map<String, RadioProfile> getAvailableProfiles() {
-        return Collections.unmodifiableMap(profiles);
+    public JsonMapper getGsonMapper() {
+        return new JsonMapper() {
+
+            private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+            @Override
+            public <T> T fromJsonString(String json, Type targetType) {
+                return gson.fromJson(json, targetType);
+            }
+
+            @Override
+            public String toJsonString(Object obj, Type type) {
+                return gson.toJson(obj, type);
+            }
+
+        };
     }
 
-    @Bean
-    MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
+    public MessageDigest getMessageDigest() throws NoSuchAlgorithmException {
         return MessageDigest.getInstance("md5");
     }
 

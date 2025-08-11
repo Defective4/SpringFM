@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -118,6 +119,18 @@ public class RadioProfile {
         }
     }
 
+    public boolean hasConnectedAudioClient(OutputStream dos) {
+        synchronized (connectedAudioClients) {
+            return connectedAudioClients.contains(Objects.requireNonNull(dos));
+        }
+    }
+
+    public boolean hasConnectedDataClient(DataOutputStream dos) {
+        synchronized (connectedDataClients) {
+            return connectedDataClients.contains(Objects.requireNonNull(dos));
+        }
+    }
+
     public void setActiveService(int index) {
         if (index < -1) throw new IllegalArgumentException("Profile index can't be less than -1");
         if (index >= services.size()) throw new IllegalArgumentException("Profile index is too big");
@@ -136,6 +149,9 @@ public class RadioProfile {
     private void removeClient(OutputStream os) {
         synchronized (connectedDataClients) {
             connectedDataClients.remove(os);
+        }
+        synchronized (connectedAudioClients) {
+            connectedAudioClients.remove(os);
         }
         if (connectedDataClients.isEmpty() && connectedAudioClients.isEmpty()) haltServices();
     }
