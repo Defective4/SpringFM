@@ -22,6 +22,8 @@ public class RtlBroadcastFMService implements AnalogRadioService {
 
     private float frequency;
     private DataGenerator generator;
+    private final float maxFrequency;
+    private final float minFrequency;
     private final String name;
     private final AudioResampler resampler;
     private Process rtlFm;
@@ -29,10 +31,14 @@ public class RtlBroadcastFMService implements AnalogRadioService {
     private Future<?> task;
 
     public RtlBroadcastFMService(@ServiceArgument(name = "name") String name,
-            @ServiceArgument(name = "rtlFmPath", defaultValue = "rtl_fm") String rtlFmPath, AudioFormat format) {
+            @ServiceArgument(name = "rtlFmPath", defaultValue = "rtl_fm") String rtlFmPath,
+            @ServiceArgument(name = "minFrequency", defaultValue = "87e6") Float minFrequency,
+            @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Float maxFrequency, AudioFormat format) {
         this.name = Objects.requireNonNull(name);
         this.format = format;
         this.rtlFmPath = rtlFmPath;
+        this.minFrequency = minFrequency;
+        this.maxFrequency = maxFrequency;
         frequency = getMinFrequency();
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data, len) -> {
             byte[] effective;
@@ -62,12 +68,12 @@ public class RtlBroadcastFMService implements AnalogRadioService {
 
     @Override
     public float getMaxFrequency() {
-        return 108e6f; // TODO
+        return maxFrequency;
     }
 
     @Override
     public float getMinFrequency() {
-        return 87e6f; // TODO
+        return minFrequency;
     }
 
     @Override
