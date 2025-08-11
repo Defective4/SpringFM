@@ -15,6 +15,7 @@ import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.RDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
@@ -48,8 +49,8 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             @ServiceArgument(name = "lowerFreq", defaultValue = "88e6") Double lowerFreq,
             @ServiceArgument(name = "upperFreq", defaultValue = "108e6") Double upperFreq,
             @ServiceArgument(name = "sdrParams") String sdrParams,
-            @ServiceArgument(name = "useRedsea", defaultValue = "true") Boolean useRedsea,
-            @ServiceArgument(name = "grRdsPort", defaultValue = "-1") Double grRdsPort, AudioFormat format) {
+            @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
+            @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
         this.format = Objects.requireNonNull(format);
         this.name = Objects.requireNonNull(name);
         this.lowerFreq = (float) (double) Objects.requireNonNull(lowerFreq);
@@ -62,8 +63,11 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
         AnnotationGenerator annotationGenerator = annotation -> {
             generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
         };
-        rdsProcessor = useRedsea ? new RedseaRDSProcessor(annotationGenerator)
-                : new GnuRadioRDSProcessor(annotationGenerator, (int) (double) Objects.requireNonNull(grRdsPort));
+        rdsProcessor = switch (processorType) {
+            case GR_RDS -> new GnuRadioRDSProcessor(annotationGenerator, (int) (double) rdsArgs);
+            case REDSEA -> new RedseaRDSProcessor(annotationGenerator);
+            default -> null;
+        };
     }
 
     @Override
@@ -145,14 +149,14 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
                 Set.of("pcm_stdout", "pcm_stdout_pcm_writer", "stdin_cmd", "stdin_cmd_cmd_reader"), pms);
         inputStream = new DataInputStream(radioProcess.getInputStream());
         outputStream = new DataOutputStream(radioProcess.getOutputStream());
-        rdsProcessor.start();
+        if (rdsProcessor != null) rdsProcessor.start();
         resampler.start();
         task = ThreadUtils.submit(() -> {
             try {
                 byte[] buffer = new byte[4096];
                 while (isStarted()) {
                     inputStream.readFully(buffer);
-                    rdsProcessor.writeAudioSample(buffer, buffer.length);
+                    if (rdsProcessor != null) rdsProcessor.writeAudioSample(buffer, buffer.length);
                     resampler.write(buffer);
                 }
             } catch (Exception e) {
@@ -174,7 +178,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             if (task != null) task.cancel(true);
             if (inputStream != null) inputStream.close();
             if (outputStream != null) outputStream.close();
-            if (rdsProcessor.isStarted()) rdsProcessor.stop();
+            if (rdsProcessor != null && rdsProcessor.isStarted()) rdsProcessor.stop();
             resampler.stop();
         } finally {
             radioProcess = null;

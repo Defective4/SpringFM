@@ -13,6 +13,7 @@ import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
 import io.github.defective4.springfm.server.packet.impl.AudioAnnotationPayload;
 import io.github.defective4.springfm.server.processing.AudioAnnotationProcessor;
+import io.github.defective4.springfm.server.processing.RDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.GnuRadioRDSProcessor;
 import io.github.defective4.springfm.server.processing.impl.RedseaRDSProcessor;
 import io.github.defective4.springfm.server.service.AdjustableGainService;
@@ -44,8 +45,8 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             @ServiceArgument(name = "rtlFmPath", defaultValue = "rtl_fm") String rtlFmPath,
             @ServiceArgument(name = "minFrequency", defaultValue = "87e6") Double minFrequency,
             @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Double maxFrequency,
-            @ServiceArgument(name = "useRedsea", defaultValue = "true") Boolean useRedsea,
-            @ServiceArgument(name = "grRdsPort", defaultValue = "-1") Double grRdsPort, AudioFormat format) {
+            @ServiceArgument(name = "rdsProcessor", defaultValue = "REDSEA") RDSProcessor processorType,
+            @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
         this.name = Objects.requireNonNull(name);
         this.format = format;
         this.rtlFmPath = rtlFmPath;
@@ -54,7 +55,11 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
         AnnotationGenerator ag = annotation -> {
             if (generator != null) generator.packetGenerated(new Packet(new AudioAnnotationPayload(annotation)));
         };
-        processor = useRedsea ? new RedseaRDSProcessor(ag) : new GnuRadioRDSProcessor(ag, (int) (double) grRdsPort);
+        processor = switch (processorType) {
+            case GR_RDS -> new GnuRadioRDSProcessor(ag, (int) (double) rdsArgs);
+            case REDSEA -> new RedseaRDSProcessor(ag);
+            default -> null;
+        };
         frequency = getMinFrequency();
         resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data) -> {
             generator.audioSampleGenerated(data, true);
@@ -134,7 +139,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             if (rtlFm != null) rtlFm.destroyForcibly();
             if (fmInput != null) fmInput.close();
             if (task != null) task.cancel(true);
-            if (processor.isStarted()) processor.stop();
+            if (processor != null && processor.isStarted()) processor.stop();
             resampler.stop();
         } finally {
             rtlFm = null;
@@ -152,7 +157,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private void tuneRtlFm() throws IOException {
         stop();
         resampler.start();
-        processor.start();
+        if (processor != null) processor.start();
         rtlFm = ScriptUtils.startProcess(rtlFmPath, new Object[] { "-f", (int) frequency, "-M", "fm", "-s", "171k",
                 "-g", gain, "-E", "deemp", "-F", "9", "-A", "fast", "-" });
         fmInput = new DataInputStream(rtlFm.getInputStream());
@@ -162,7 +167,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
                 while (isStarted()) {
                     fmInput.readFully(buffer);
                     resampler.write(buffer);
-                    processor.writeAudioSample(buffer, buffer.length);
+                    if (processor != null) processor.writeAudioSample(buffer, buffer.length);
                 }
             } catch (Exception e) {
                 if (debug) e.printStackTrace();

@@ -67,18 +67,21 @@ public class ConfigurationReader {
                     } else {
                         ServiceArgument argInfo = param.getAnnotation(ServiceArgument.class);
                         Object val;
-                        if (svcConfig.getArgs().containsKey(argInfo.name())
+
+                        if (param.getType().isEnum() && svcConfig.getArgs().containsKey(argInfo.name())
+                                && svcConfig.getArgs().get(argInfo.name()) instanceof String str) {
+                            Method m = param.getType().getMethod("valueOf", String.class);
+                            val = m.invoke(null, str.toUpperCase());
+                        } else if (svcConfig.getArgs().containsKey(argInfo.name())
                                 && param.getType().isInstance(svcConfig.getArgs().get(argInfo.name()))) {
                             val = svcConfig.getArgs().get(argInfo.name());
-                        } else if (argInfo.defaultValue().isEmpty())
+                        } else if (argInfo.defaultValue().isEmpty()) {
                             val = null;
-                        else {
-                            if (param.getType() == String.class) {
-                                val = argInfo.defaultValue();
-                            } else {
-                                Method m = param.getType().getMethod("valueOf", String.class);
-                                val = m.invoke(null, argInfo.defaultValue());
-                            }
+                        } else if (param.getType() == String.class) {
+                            val = argInfo.defaultValue();
+                        } else {
+                            Method m = param.getType().getMethod("valueOf", String.class);
+                            val = m.invoke(null, argInfo.defaultValue());
                         }
                         args[i] = val;
                     }
