@@ -22,6 +22,8 @@
                         <manifest>
                             <mainClass>
                                 io.github.defective4.springfm.backend.Main</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
                         </manifest>
                     </archive>
                 </configuration>
