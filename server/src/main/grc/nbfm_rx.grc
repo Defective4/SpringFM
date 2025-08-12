@@ -564,6 +564,33 @@ blocks:
     coordinate: [296, 12.0]
     rotation: 0
     state: true
+- name: snippet_0
+  id: snippet
+  parameters:
+    alias: ''
+    code: self.stdin_cmd.cmd_reader.set_callbacks(self.set_freq, self.set_gain)
+    comment: ''
+    priority: '0'
+    section: main_after_start
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 364.0]
+    rotation: 0
+    state: true
+- name: stdin_cmd
+  id: stdin_cmd
+  parameters:
+    alias: ''
+    comment: ''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 332.0]
+    rotation: 0
+    state: true
 
 connections:
 - [analog_nbfm_rx_0, '0', blocks_multiply_const_vxx_0, '0']

@@ -119,7 +119,10 @@ public class NarrowbandFMService implements AnalogRadioService, AdjustableGainSe
     }
 
     @Override
-    public void setGain(float gain) throws IOException, IllegalArgumentException {
+    public void setGain(float gain) throws IOException {
+        outputStream.writeFloat(2);
+        outputStream.writeFloat(gain);
+        outputStream.flush();
         this.gain = gain;
     }
 
@@ -181,7 +184,10 @@ public class NarrowbandFMService implements AnalogRadioService, AdjustableGainSe
     }
 
     @Override
-    public void tune(float freq) throws IllegalArgumentException, IOException {
+    public synchronized void tune(float freq) throws IllegalArgumentException, IOException {
+        outputStream.writeFloat(1);
+        outputStream.writeFloat(freq);
+        outputStream.flush();
         this.freq = freq;
     }
 
