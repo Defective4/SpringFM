@@ -14,6 +14,7 @@ import java.util.concurrent.Future;
 import javax.sound.sampled.AudioFormat;
 
 import io.github.defective4.springfm.server.audio.AudioResampler;
+import io.github.defective4.springfm.server.audio.AudioSystemAudioResampler;
 import io.github.defective4.springfm.server.data.AnnotationGenerator;
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.packet.Packet;
@@ -70,7 +71,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             default -> null;
         };
         frequency = getMinFrequency();
-        resampler = new AudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data) -> {
+        resampler = new AudioSystemAudioResampler(new AudioFormat(171e3f, 16, 1, true, false), format, (data) -> {
             generator.audioSampleGenerated(data, true);
         });
     }

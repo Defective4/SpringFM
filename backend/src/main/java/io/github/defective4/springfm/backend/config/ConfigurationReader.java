@@ -35,6 +35,7 @@ import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
 import io.github.defective4.springfm.server.service.impl.BroadcastFMService;
+import io.github.defective4.springfm.server.service.impl.NarrowbandFMService;
 import io.javalin.json.JsonMapper;
 
 public class ConfigurationReader {
@@ -145,10 +146,17 @@ public class ConfigurationReader {
     }
 
     private static void saveDefaultConfig() throws IOException {
-        MainConfiguration config = new MainConfiguration(Map.of("default",
-                new ProfileConfiguration(List.of(new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
-                        Map.of("name", "Broadcast FM", "lowerFreq", 87e6f, "upperFreq", 108e6f),
-                        new AudioFormatConfiguration(44.1e3f, 1))))),
+        MainConfiguration config = new MainConfiguration(
+                Map.of("default",
+                        new ProfileConfiguration(List.of(
+                                new ServiceConfiguration(BroadcastFMService.class.getSimpleName(),
+                                        Map.of("name", "Broadcast FM", "lowerFrequency", 87e6f, "upperFrequency",
+                                                108e6f),
+                                        new AudioFormatConfiguration(44.1e3f, 1)),
+                                new ServiceConfiguration(NarrowbandFMService.class.getSimpleName(),
+                                        Map.of("name", "Narrowband FM (2m)", "lowerFrequency", 137e3f, "upperFrequency",
+                                                150e3f, "frequencyStep", 5e3f),
+                                        new AudioFormatConfiguration(44.1e3f, 1))))),
                 false);
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
