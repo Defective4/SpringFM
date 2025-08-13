@@ -43,16 +43,16 @@ public class NarrowbandFMService implements AnalogRadioService, AdjustableGainSe
     private Future<?> task;
 
     public NarrowbandFMService(@ServiceArgument(name = "name") String name,
-            @ServiceArgument(name = "lowerFrequency", defaultValue = "137e6") Float lowerFreq,
-            @ServiceArgument(name = "upperFrequency", defaultValue = "434e6") Float upperFreq,
-            @ServiceArgument(name = "frequencyStep", defaultValue = "5e3") Float freqStep,
+            @ServiceArgument(name = "lowerFrequency", defaultValue = "137e6") Double lowerFreq,
+            @ServiceArgument(name = "upperFrequency", defaultValue = "434e6") Double upperFreq,
+            @ServiceArgument(name = "frequencyStep", defaultValue = "5e3") Double freqStep,
             @ServiceArgument(name = "sdrParams", defaultValue = "") String sdrParams, AudioFormat format) {
         this.format = format;
         this.name = name;
-        this.lowerFreq = lowerFreq;
-        this.upperFreq = upperFreq;
+        this.lowerFreq = (float) (double) lowerFreq;
+        this.upperFreq = (float) (double) upperFreq;
         freq = getMinFrequency();
-        this.freqStep = freqStep;
+        this.freqStep = (float) (double) freqStep;
         this.sdrParams = sdrParams;
         resampler = format.getSampleRate() == 48e3f
                 ? new PassthroughAudioResampler(sample -> generator.audioSampleGenerated(sample, false))
