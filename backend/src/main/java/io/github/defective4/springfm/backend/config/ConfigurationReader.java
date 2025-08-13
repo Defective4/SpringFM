@@ -34,6 +34,7 @@ import io.github.defective4.springfm.backend.config.file.ServiceConfiguration;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
 import io.github.defective4.springfm.server.service.ServiceArgument;
+import io.github.defective4.springfm.server.service.impl.AMService;
 import io.github.defective4.springfm.server.service.impl.BroadcastFMService;
 import io.github.defective4.springfm.server.service.impl.NarrowbandFMService;
 import io.javalin.json.JsonMapper;
@@ -154,8 +155,12 @@ public class ConfigurationReader {
                                                 108e6f),
                                         new AudioFormatConfiguration(44.1e3f, 1)),
                                 new ServiceConfiguration(NarrowbandFMService.class.getSimpleName(),
-                                        Map.of("name", "Narrowband FM (2m)", "lowerFrequency", 137e3f, "upperFrequency",
-                                                150e3f, "frequencyStep", 5e3f),
+                                        Map.of("name", "Narrowband FM (2m)", "lowerFrequency", 137e6f, "upperFrequency",
+                                                150e6f, "frequencyStep", 5e3f),
+                                        new AudioFormatConfiguration(44.1e3f, 1)),
+                                new ServiceConfiguration(AMService.class.getSimpleName(),
+                                        Map.of("name", "Broadcast AM", "lowerFrequency", 1e6f, "upperFrequency", 10e6f,
+                                                "frequencyStep", 1e3f),
                                         new AudioFormatConfiguration(44.1e3f, 1))))),
                 false);
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {

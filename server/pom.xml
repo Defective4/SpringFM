@@ -43,11 +43,16 @@
                             <arguments>
                                 <argument>-o</argument>
                                 <argument>${project.basedir}/target/classes</argument>
+                                
                                 <argument>src/main/grc/stdin_cmd.grc</argument>
                                 <argument>src/main/grc/pcm_stdout.grc</argument>
+                                
                                 <argument>src/main/grc/rds_processor.grc</argument>
+                                
                                 <argument>src/main/grc/wbfm_rx.grc</argument>
                                 <argument>src/main/grc/nbfm_rx.grc</argument>
+                                <argument>src/main/grc/am_rx.grc</argument>
+                                
                                 <argument>src/main/grc/gr_check.grc</argument>
                                 <argument>src/main/grc/gr_rds_check.grc</argument>
                             </arguments>
