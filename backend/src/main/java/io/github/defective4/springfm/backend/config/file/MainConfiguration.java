@@ -5,10 +5,12 @@ import java.util.Map;
 public class MainConfiguration {
     private final boolean debug;
     private final Map<String, ProfileConfiguration> profiles;
+    private final ServerConfiguration server;
 
-    public MainConfiguration(Map<String, ProfileConfiguration> profiles, boolean debug) {
+    public MainConfiguration(Map<String, ProfileConfiguration> profiles, boolean debug, ServerConfiguration server) {
         this.profiles = profiles;
         this.debug = debug;
+        this.server = server;
     }
 
     public Map<String, ProfileConfiguration> getProfiles() {

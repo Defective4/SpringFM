@@ -30,6 +30,7 @@ import com.google.gson.GsonBuilder;
 import io.github.defective4.springfm.backend.config.file.AudioFormatConfiguration;
 import io.github.defective4.springfm.backend.config.file.MainConfiguration;
 import io.github.defective4.springfm.backend.config.file.ProfileConfiguration;
+import io.github.defective4.springfm.backend.config.file.ServerConfiguration;
 import io.github.defective4.springfm.backend.config.file.ServiceConfiguration;
 import io.github.defective4.springfm.backend.profile.RadioProfile;
 import io.github.defective4.springfm.server.service.RadioService;
@@ -162,7 +163,7 @@ public class ConfigurationReader {
                                         Map.of("name", "Broadcast AM", "lowerFrequency", 1e6f, "upperFrequency", 10e6f,
                                                 "frequencyStep", 1e3f),
                                         new AudioFormatConfiguration(44.1e3f, 1))))),
-                false);
+                false, new ServerConfiguration("0.0.0.0", 8080));
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
         }
