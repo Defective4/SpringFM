@@ -15,9 +15,10 @@ public class AudioAnnotation {
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if ((obj == null) || (getClass() != obj.getClass())) return false;
         AudioAnnotation other = (AudioAnnotation) obj;
-        return Objects.equals(description, other.description) && Objects.equals(title, other.title);
+        return Objects.equals(description, other.description) && nonMusic == other.nonMusic
+                && Objects.equals(title, other.title);
     }
 
     public String getDescription() {
@@ -30,7 +31,7 @@ public class AudioAnnotation {
 
     @Override
     public int hashCode() {
-        return Objects.hash(description, title);
+        return Objects.hash(description, nonMusic, title);
     }
 
     public boolean isNonMusic() {
