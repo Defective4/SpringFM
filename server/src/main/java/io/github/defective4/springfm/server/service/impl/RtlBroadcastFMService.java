@@ -135,6 +135,10 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     }
 
     @Override
+    public void init() throws IOException {
+    }
+
+    @Override
     public boolean isStarted() {
         return rtlFm != null && rtlFm.isAlive() && task != null && !task.isCancelled();
     }

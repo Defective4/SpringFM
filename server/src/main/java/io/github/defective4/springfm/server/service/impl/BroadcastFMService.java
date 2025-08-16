@@ -139,6 +139,10 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
     }
 
     @Override
+    public void init() throws IOException {
+    }
+
+    @Override
     public boolean isStarted() {
         return radioProcess != null && radioProcess.isAlive();
     }

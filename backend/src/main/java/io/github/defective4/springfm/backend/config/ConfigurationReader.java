@@ -92,9 +92,9 @@ public class ConfigurationReader {
                     }
                 }
                 RadioService service = (RadioService) constructor.newInstance(args);
-                Collection<String> missing = service.checkMissingDependencies();
                 System.err.println("Instantiated service \"" + service.getName() + "\" ("
                         + service.getClass().getSimpleName() + "), checking its dependencies...");
+                Collection<String> missing = service.checkMissingDependencies();
                 if (!missing.isEmpty()) {
                     System.err.println("Couldn't create service \"" + service.getName()
                             + "\", because some of its dependencies are missing or misconfigured.");
@@ -103,6 +103,13 @@ public class ConfigurationReader {
                     System.err.println("Install or configure the dependencies and try again.");
                     System.exit(7);
                     return;
+                }
+                System.err.println("Initializing service \"" + service.getName() + "\"");
+                try {
+                    service.init();
+                } catch (Exception e) {
+                    System.err.println("Couldn't initialize service \"" + service.getName() + "\"");
+                    e.printStackTrace();
                 }
                 service.setDebugMode(config.isDebug());
                 boolean b = services.add(service);

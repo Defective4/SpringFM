@@ -109,6 +109,10 @@ public class AMService implements AnalogRadioService, AdjustableGainService {
     }
 
     @Override
+    public void init() throws IOException {
+    }
+
+    @Override
     public boolean isStarted() {
         return radioProcess != null && radioProcess.isAlive();
     }

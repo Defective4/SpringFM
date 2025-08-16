@@ -14,6 +14,8 @@ public sealed interface RadioService permits DigitalRadioService, AnalogRadioSer
 
     String getName();
 
+    void init() throws IOException;
+
     boolean isStarted();
 
     void setDebugMode(boolean debug);
