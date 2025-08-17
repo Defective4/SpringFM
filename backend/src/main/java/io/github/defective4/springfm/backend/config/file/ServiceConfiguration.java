@@ -2,32 +2,39 @@ package io.github.defective4.springfm.backend.config.file;
 
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
+
 public class ServiceConfiguration {
-    private final Map<String, Object> args;
-    private final String className;
-    private final AudioFormatConfiguration format;
+    @SerializedName("className")
+    private final String aclassName;
+
+    @SerializedName("format")
+    private final AudioFormatConfiguration bformat;
+
+    @SerializedName("args")
+    private final Map<String, Object> cargs;
 
     public ServiceConfiguration(String className, Map<String, Object> args, AudioFormatConfiguration format) {
-        this.className = className;
-        this.args = args;
-        this.format = format;
+        aclassName = className;
+        cargs = args;
+        bformat = format;
     }
 
     public Map<String, Object> getArgs() {
-        return args;
+        return cargs;
     }
 
     public String getClassName() {
-        return className;
+        return aclassName;
     }
 
     public AudioFormatConfiguration getFormat() {
-        return format;
+        return bformat;
     }
 
     @Override
     public String toString() {
-        return "ServiceConfiguration [args=" + args + ", className=" + className + "]";
+        return "ServiceConfiguration [args=" + cargs + ", className=" + aclassName + "]";
     }
 
 }
