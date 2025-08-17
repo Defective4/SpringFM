@@ -92,6 +92,8 @@ public class RtlDABService implements DigitalRadioService {
     private Future<?> etiTask;
 
     private final AudioFormat format;
+    private final AudioFormat format2;
+
     private final int gain;
 
     private DataGenerator generator;
@@ -118,6 +120,8 @@ public class RtlDABService implements DigitalRadioService {
             @ServiceArgument(name = "dablinPath", defaultValue = "dablin") String dablinPath,
             @ServiceArgument(name = "soxPath", defaultValue = "sox") String soxPath,
             @ServiceArgument(name = "gain", defaultValue = "auto") String gain, AudioFormat format) {
+        format2 = format;
+        if (format.getChannels() != 2) throw new IllegalArgumentException("Only stereo audio format is allowed");
         int gainVal;
         if (gain.equalsIgnoreCase("auto")) {
             gainVal = -1;
@@ -228,7 +232,7 @@ public class RtlDABService implements DigitalRadioService {
         etiProcess = ScriptUtils.startProcess(etiCmdlinePath, etiArgs);
         tuneDablin(stationIndex);
         soxProcess = ScriptUtils.startProcess(soxPath, "-t", "raw", "-r", "48k", "-c", "2", "-ef", "-b", "32", "-",
-                "-t", "raw", "-r", "48k", "-c", "2", "-es", "-b", "16", "-");
+                "-t", "raw", "-r", Integer.toString((int) format.getFrameRate()), "-c", "2", "-es", "-b", "16", "-");
         soxOutput = soxProcess.getOutputStream();
         soxInput = new DataInputStream(soxProcess.getInputStream());
         etiInput = etiProcess.getInputStream();
