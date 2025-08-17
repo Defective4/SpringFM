@@ -20,6 +20,8 @@ import java.util.concurrent.Future;
 import javax.sound.sampled.AudioFormat;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
@@ -98,6 +100,8 @@ public class RtlDABService implements DigitalRadioService {
 
     private DataGenerator generator;
 
+    private final List<String> ignoredServices;
+
     private final String name;
 
     private DataInputStream soxInput;
@@ -111,7 +115,6 @@ public class RtlDABService implements DigitalRadioService {
     private Future<?> soxTask;
 
     private int stationIndex;
-
     private final List<DABStation> stations = new ArrayList<>();
 
     public RtlDABService(@ServiceArgument(name = "name", defaultValue = "DAB") String name,
@@ -119,7 +122,8 @@ public class RtlDABService implements DigitalRadioService {
             @ServiceArgument(name = "channel") String channel,
             @ServiceArgument(name = "dablinPath", defaultValue = "dablin") String dablinPath,
             @ServiceArgument(name = "soxPath", defaultValue = "sox") String soxPath,
-            @ServiceArgument(name = "gain", defaultValue = "auto") String gain, AudioFormat format) {
+            @ServiceArgument(name = "gain", defaultValue = "auto") String gain,
+            @ServiceArgument(name = "ignoredServices") JsonArray ignoredServices, AudioFormat format) {
         format2 = format;
         if (format.getChannels() != 2) throw new IllegalArgumentException("Only stereo audio format is allowed");
         int gainVal;
@@ -142,6 +146,10 @@ public class RtlDABService implements DigitalRadioService {
         this.channel = channel;
         this.format = format;
         this.name = name;
+
+        List<String> ignoredSvcList = new ArrayList<>();
+        for (JsonElement el : ignoredServices) ignoredSvcList.add(el.getAsString());
+        this.ignoredServices = Collections.unmodifiableList(ignoredSvcList);
     }
 
     @Override
@@ -194,7 +202,8 @@ public class RtlDABService implements DigitalRadioService {
             String json = jsonBuilder.toString().replace("\"Eid:\"", "\"Eid\":\"");
             Ensemble ensemble = new Gson().fromJson(json, Ensemble.class);
             for (Map.Entry<String, String> station : ensemble.getStations().entrySet()) {
-                stations.add(new DABStation(station.getKey(), station.getValue()));
+                if (!ignoredServices.contains(station.getKey()))
+                    stations.add(new DABStation(station.getKey(), station.getValue()));
             }
             System.err.println(
                     "Received ensemble \"" + ensemble.getEnsemble() + "\" with " + stations.size() + " stations.");
