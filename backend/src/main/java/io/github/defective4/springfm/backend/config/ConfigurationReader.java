@@ -123,7 +123,7 @@ public class ConfigurationReader {
                             if (svcConfig.getArgs().containsKey(argName)) {
                                 val = gson.toJsonTree(svcConfig.getArgs().get(argName)).getAsJsonArray();
                             } else
-                                val = null;
+                                val = new JsonArray();
                         } else if (param.getType().isEnum() && svcConfig.getArgs().containsKey(argName)
                                 && svcConfig.getArgs().get(argName) instanceof String str) {
                             Method m = param.getType().getMethod("valueOf", String.class);

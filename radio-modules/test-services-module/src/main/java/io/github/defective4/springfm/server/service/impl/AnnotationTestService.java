@@ -71,7 +71,7 @@ public class AnnotationTestService implements DigitalRadioService {
             AudioFormat format) {
         this.format = format;
         if (name == null) throw new IllegalArgumentException("Service name is required");
-        if (stations == null) throw new IllegalArgumentException("Stations configuration missing from config");
+        if (stations.isEmpty()) throw new IllegalArgumentException("You must specify at least one test station");
         this.name = name;
         this.annotationInterval = annotationInterval;
         List<AnnotationStation> list = new ArrayList<>();
