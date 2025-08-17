@@ -1,0 +1,7 @@
+{
+    "name": "SpringFM Core",
+    "version": "${project.version}",
+    "description": [
+        "Contains core SpringFM components"
+    ]
+}

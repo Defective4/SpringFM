@@ -8,7 +8,7 @@ public class SpringFMModule {
     private final URL url;
 
     public SpringFMModule(URL url, SpringFMModuleInfo moduleInfo) {
-        this.url = Objects.requireNonNull(url);
+        this.url = url;
         this.moduleInfo = Objects.requireNonNull(moduleInfo);
     }
 

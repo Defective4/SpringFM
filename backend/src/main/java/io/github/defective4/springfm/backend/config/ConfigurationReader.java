@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -52,7 +53,7 @@ public class ConfigurationReader {
     private final MainConfiguration config;
     private final Gson gson = new Gson();
     private ClassLoader moduleLoader;
-    private List<SpringFMModule> modules;
+    private final List<SpringFMModule> modules = new ArrayList<>();
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
 
     public ConfigurationReader() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
@@ -65,7 +66,11 @@ public class ConfigurationReader {
         System.err.println("Loading modules...");
         File modulesDir = new File(config.getModuleDirectory());
 
-        modules = Arrays.stream(modulesDir.listFiles()).filter(mod -> mod.getName().toLowerCase().endsWith(".jar"))
+        try (Reader reader = new InputStreamReader(getClass().getResourceAsStream("/springfm-module.json"))) {
+            modules.add(new SpringFMModule(null, gson.fromJson(reader, SpringFMModuleInfo.class)));
+        }
+
+        modules.addAll(Arrays.stream(modulesDir.listFiles()).filter(mod -> mod.getName().toLowerCase().endsWith(".jar"))
                 .map(file -> {
                     try (ZipFile zipFile = new ZipFile(file)) {
                         ZipEntry entry = zipFile.getEntry("springfm-module.json");
@@ -84,10 +89,11 @@ public class ConfigurationReader {
                         e.printStackTrace();
                         return null;
                     }
-                }).toList();
+                }).toList());
         System.err.println("Discovered " + modules.size() + " modules.");
 
-        moduleLoader = new URLClassLoader(modules.stream().map(mod -> mod.getUrl()).toList().toArray(new URL[0]),
+        moduleLoader = new URLClassLoader(
+                modules.stream().map(mod -> mod.getUrl()).filter(Objects::nonNull).toList().toArray(new URL[0]),
                 getClass().getClassLoader());
 
         System.err.println("Loading services...");
@@ -196,7 +202,7 @@ public class ConfigurationReader {
     }
 
     public List<SpringFMModule> getModules() {
-        return modules;
+        return Collections.unmodifiableList(modules);
     }
 
     private static void saveDefaultConfig() throws IOException {
