@@ -1,0 +1,7 @@
+{
+    "name": "SpringFM test services",
+    "version": "${project.version}",
+    "description": [
+        "This module provides some services useful for testing"
+    ]
+}

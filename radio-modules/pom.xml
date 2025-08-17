@@ -12,5 +12,6 @@
 
     <modules>
         <module>digital-radio-module</module>
+        <module>test-services-module</module>
     </modules>
 </project>

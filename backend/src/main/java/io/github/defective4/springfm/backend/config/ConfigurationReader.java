@@ -33,6 +33,7 @@ import javax.sound.sampled.AudioFormat;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 
 import io.github.defective4.springfm.backend.config.file.AudioFormatConfiguration;
 import io.github.defective4.springfm.backend.config.file.MainConfiguration;
@@ -117,13 +118,19 @@ public class ConfigurationReader {
                         ServiceArgument argInfo = param.getAnnotation(ServiceArgument.class);
                         Object val;
 
-                        if (param.getType().isEnum() && svcConfig.getArgs().containsKey(argInfo.name())
-                                && svcConfig.getArgs().get(argInfo.name()) instanceof String str) {
+                        String argName = argInfo.name();
+                        if (param.getType() == JsonArray.class) {
+                            if (svcConfig.getArgs().containsKey(argName)) {
+                                val = gson.toJsonTree(svcConfig.getArgs().get(argName)).getAsJsonArray();
+                            } else
+                                val = null;
+                        } else if (param.getType().isEnum() && svcConfig.getArgs().containsKey(argName)
+                                && svcConfig.getArgs().get(argName) instanceof String str) {
                             Method m = param.getType().getMethod("valueOf", String.class);
                             val = m.invoke(null, str.toUpperCase());
-                        } else if (svcConfig.getArgs().containsKey(argInfo.name())
-                                && param.getType().isInstance(svcConfig.getArgs().get(argInfo.name()))) {
-                            val = svcConfig.getArgs().get(argInfo.name());
+                        } else if (svcConfig.getArgs().containsKey(argName)
+                                && param.getType().isInstance(svcConfig.getArgs().get(argName))) {
+                            val = svcConfig.getArgs().get(argName);
                         } else if (argInfo.defaultValue().isEmpty()) {
                             val = null;
                         } else if (param.getType() == String.class) {
