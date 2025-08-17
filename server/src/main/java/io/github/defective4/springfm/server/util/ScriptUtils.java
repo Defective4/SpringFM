@@ -13,6 +13,13 @@ public class ScriptUtils {
     private ScriptUtils() {
     }
 
+    public static void recursiveDelete(File dir) {
+        if (dir.isDirectory()) {
+            for (File f : dir.listFiles()) recursiveDelete(f);
+        }
+        dir.delete();
+    }
+
     public static Process runGnuRadioScript(String resource, Set<String> dependencies, String... args)
             throws IOException {
         File tmpDir = Files.createTempDirectory("springfm").toFile();
@@ -43,21 +50,20 @@ public class ScriptUtils {
         return runGnuRadioScript(resource, Collections.emptySet(), args);
     }
 
-    public static Process startProcess(String command, Object... args) throws IOException {
+    public static Process startProcess(String command, File dir, Object... args) throws IOException {
         String[] processArray = new String[args.length + 1];
         processArray[0] = Objects.requireNonNull(command);
         for (int i = 0; i < args.length; i++) {
             processArray[i + 1] = String.valueOf(args[i]);
         }
-        Process process = new ProcessBuilder(processArray).start();
+        ProcessBuilder builder = new ProcessBuilder(processArray);
+        if (dir != null) builder.directory(dir);
+        Process process = builder.start();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> process.destroyForcibly()));
         return process;
     }
 
-    private static void recursiveDelete(File dir) {
-        if (dir.isDirectory()) {
-            for (File f : dir.listFiles()) recursiveDelete(f);
-        }
-        dir.delete();
+    public static Process startProcess(String command, Object... args) throws IOException {
+        return startProcess(command, null, args);
     }
 }

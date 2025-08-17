@@ -110,6 +110,8 @@ public class ConfigurationReader {
                 } catch (Exception e) {
                     System.err.println("Couldn't initialize service \"" + service.getName() + "\"");
                     e.printStackTrace();
+                    System.exit(8);
+                    return;
                 }
                 service.setDebugMode(config.isDebug());
                 boolean b = services.add(service);

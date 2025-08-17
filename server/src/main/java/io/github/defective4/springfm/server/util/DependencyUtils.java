@@ -22,6 +22,18 @@ public class DependencyUtils {
         }
     }
 
+    public static boolean checkHelpableCommand(String path) {
+        return checkHelpableCommand(path, 0);
+    }
+
+    public static boolean checkHelpableCommand(String path, int expectedCode) {
+        try {
+            return ScriptUtils.startProcess(path, "-h").waitFor() == expectedCode;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static boolean checkPython3() {
         try {
             return ScriptUtils.startProcess("python3", "--version").waitFor() == 0;
