@@ -135,7 +135,18 @@ public class ConfigurationReader {
                         args[i] = val;
                     }
                 }
-                RadioService service = (RadioService) constructor.newInstance(args);
+                RadioService service;
+                try {
+                    service = (RadioService) constructor.newInstance(args);
+                } catch (InvocationTargetException e2) {
+                    if (e2.getTargetException() instanceof IllegalArgumentException arg) {
+                        System.err.println("Couldn't initialize service " + serviceClass.getSimpleName() + ": "
+                                + arg.getMessage());
+                        System.exit(9);
+                        return;
+                    }
+                    throw e2;
+                }
                 System.err.println("Instantiated service \"" + service.getName() + "\" ("
                         + service.getClass().getSimpleName() + "), checking its dependencies...");
                 Collection<String> missing = service.checkMissingDependencies();

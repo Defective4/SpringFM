@@ -42,11 +42,12 @@ public class NarrowbandFMService implements AnalogRadioService, AdjustableGainSe
     private final String sdrParams;
     private Future<?> task;
 
-    public NarrowbandFMService(@ServiceArgument(name = "name") String name,
+    public NarrowbandFMService(@ServiceArgument(name = "name", defaultValue = "Narrowband FM") String name,
             @ServiceArgument(name = "lowerFrequency", defaultValue = "137e6") Double lowerFreq,
             @ServiceArgument(name = "upperFrequency", defaultValue = "434e6") Double upperFreq,
             @ServiceArgument(name = "frequencyStep", defaultValue = "5e3") Double freqStep,
             @ServiceArgument(name = "sdrParams", defaultValue = "") String sdrParams, AudioFormat format) {
+        if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.format = format;
         this.name = name;
         this.lowerFreq = (float) (double) lowerFreq;

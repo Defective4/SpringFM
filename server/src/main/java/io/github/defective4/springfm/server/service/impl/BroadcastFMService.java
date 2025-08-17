@@ -54,7 +54,7 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
     private final String sdrParams;
     private Future<?> task;
 
-    public BroadcastFMService(@ServiceArgument(name = "name") String name,
+    public BroadcastFMService(@ServiceArgument(name = "name", defaultValue = "Broadcast FM") String name,
             @ServiceArgument(name = "lowerFrequency", defaultValue = "88e6") Double lowerFreq,
             @ServiceArgument(name = "upperFrequency", defaultValue = "108e6") Double upperFreq,
             @ServiceArgument(name = "sdrParams") String sdrParams,
@@ -62,8 +62,8 @@ public class BroadcastFMService implements AnalogRadioService, AdjustableGainSer
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
         this.processorType = processorType;
         if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
-        this.format = Objects.requireNonNull(format);
-        this.name = Objects.requireNonNull(name);
+        this.format = format;
+        this.name = name;
         this.lowerFreq = (float) (double) Objects.requireNonNull(lowerFreq);
         this.upperFreq = (float) (double) Objects.requireNonNull(upperFreq);
         this.sdrParams = sdrParams;

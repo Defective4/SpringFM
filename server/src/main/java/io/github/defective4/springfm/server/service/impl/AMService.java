@@ -42,11 +42,12 @@ public class AMService implements AnalogRadioService, AdjustableGainService {
     private final String sdrParams;
     private Future<?> task;
 
-    public AMService(@ServiceArgument(name = "name") String name,
+    public AMService(@ServiceArgument(name = "name", defaultValue = "Broadcast AM") String name,
             @ServiceArgument(name = "lowerFrequency", defaultValue = "0") Double lowerFreq,
             @ServiceArgument(name = "upperFrequency", defaultValue = "21e6") Double upperFreq,
             @ServiceArgument(name = "frequencyStep", defaultValue = "1e3") Double freqStep,
             @ServiceArgument(name = "sdrParams", defaultValue = "") String sdrParams, AudioFormat format) {
+        if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
         this.format = format;
         this.name = name;
         this.lowerFreq = (float) (double) lowerFreq;

@@ -49,7 +49,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
     private final String rtlFmPath;
     private Future<?> task;
 
-    public RtlBroadcastFMService(@ServiceArgument(name = "name") String name,
+    public RtlBroadcastFMService(@ServiceArgument(name = "name", defaultValue = "RTL-SDR Broadcast FM") String name,
             @ServiceArgument(name = "rtlFmPath", defaultValue = "rtl_fm") String rtlFmPath,
             @ServiceArgument(name = "minFrequency", defaultValue = "87e6") Double minFrequency,
             @ServiceArgument(name = "maxFrequency", defaultValue = "108e6") Double maxFrequency,
@@ -57,7 +57,7 @@ public class RtlBroadcastFMService implements AnalogRadioService, AdjustableGain
             @ServiceArgument(name = "rdsArgs", defaultValue = "-1") Double rdsArgs, AudioFormat format) {
         this.processorType = processorType;
         if (format.getChannels() != 1) throw new IllegalArgumentException("Only mono audio format is allowed");
-        this.name = Objects.requireNonNull(name);
+        this.name = name;
         this.format = format;
         this.rtlFmPath = rtlFmPath;
         this.minFrequency = Objects.requireNonNull((float) (double) minFrequency);

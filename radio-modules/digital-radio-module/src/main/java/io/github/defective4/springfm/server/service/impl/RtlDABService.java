@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Future;
 
 import javax.sound.sampled.AudioFormat;
@@ -113,7 +112,7 @@ public class RtlDABService implements DigitalRadioService {
 
     private final List<DABStation> stations = new ArrayList<>();
 
-    public RtlDABService(@ServiceArgument(name = "name") String name,
+    public RtlDABService(@ServiceArgument(name = "name", defaultValue = "DAB") String name,
             @ServiceArgument(name = "etiCmdlinePath", defaultValue = "eti-cmdline-rtlsdr") String etiCmdlinePath,
             @ServiceArgument(name = "channel") String channel,
             @ServiceArgument(name = "dablinPath", defaultValue = "dablin") String dablinPath,
@@ -128,13 +127,17 @@ public class RtlDABService implements DigitalRadioService {
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid gain value. It must either be an integer, or \"auto\"");
             }
+
+        if (channel == null)
+            throw new IllegalArgumentException("You must specify a DAB channel in service configuration");
+
         this.gain = gainVal;
         this.etiCmdlinePath = etiCmdlinePath;
         this.dablinPath = dablinPath;
         this.soxPath = soxPath;
-        this.channel = Objects.requireNonNull(channel);
+        this.channel = channel;
         this.format = format;
-        this.name = Objects.requireNonNull(name);
+        this.name = name;
     }
 
     @Override
