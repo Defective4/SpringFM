@@ -7,12 +7,10 @@
         <artifactId>springfm</artifactId>
         <version>0.1</version>
     </parent>
-    <artifactId>digital-radio-module</artifactId>
-    <dependencies>
-        <dependency>
-            <groupId>io.github.defective4.radio.springfm</groupId>
-            <artifactId>server</artifactId>
-            <version>0.1</version>
-        </dependency>
-    </dependencies>
+    <packaging>pom</packaging>
+    <artifactId>radio-modules</artifactId>
+
+    <modules>
+        <module>digital-radio-module</module>
+    </modules>
 </project>

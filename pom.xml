@@ -25,6 +25,6 @@
     	<module>server</module>
     	<module>backend</module>
     	<module>commons</module>
-    	<module>digital-radio-module</module>
+    	<module>radio-modules</module>
     </modules>
 </project>
