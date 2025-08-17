@@ -6,3 +6,4 @@ target
 .json
 dependency-reduced-pom.xml
 /*.grc
+modules

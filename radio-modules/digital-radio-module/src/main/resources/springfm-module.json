@@ -1,0 +1,10 @@
+{
+    "name": "Digital radio services for SpringFM",
+    "version": "${project.version}",
+    "description": [
+        "Provides the following additional additional radio services:",
+        "- DAB(+) backed by a live RTL-SDR source",
+        "",
+        "Services in this module depend on eti-cmdline-rtlsdr, Dablin and sox"
+    ]
+}

@@ -66,6 +66,7 @@ public class ProfileController {
         });
 
         javalin.get("/auth", ctx -> ctx.json(auth()));
+        javalin.get("/modules", ctx -> ctx.json(config.getModules().stream().map(mod -> mod.getModuleInfo()).toList()));
 
         javalin.exception(IllegalArgumentException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));
         javalin.exception(IllegalStateException.class, (ex, ctx) -> ctx.result(illegalArgument(ex)));

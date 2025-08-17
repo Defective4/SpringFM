@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Constructor;
@@ -11,7 +12,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -51,6 +52,7 @@ public class ConfigurationReader {
     private final MainConfiguration config;
     private final Gson gson = new Gson();
     private ClassLoader moduleLoader;
+    private List<SpringFMModule> modules;
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
 
     public ConfigurationReader() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
@@ -61,18 +63,32 @@ public class ConfigurationReader {
         }
 
         System.err.println("Loading modules...");
-        File modulesDir = new File("modules"); // TODO config
-        URL[] moduleURLs = Arrays.stream(modulesDir.listFiles()).filter(file -> file.getName().endsWith(".jar"))
+        File modulesDir = new File(config.getModuleDirectory());
+
+        modules = Arrays.stream(modulesDir.listFiles()).filter(mod -> mod.getName().toLowerCase().endsWith(".jar"))
                 .map(file -> {
-                    try {
-                        return file.toURI().toURL();
-                    } catch (MalformedURLException e) {
+                    try (ZipFile zipFile = new ZipFile(file)) {
+                        ZipEntry entry = zipFile.getEntry("springfm-module.json");
+                        if (entry == null || entry.isDirectory())
+                            throw new IOException("springfm-module.json does not exist in the module archive");
+                        SpringFMModuleInfo info;
+                        try (Reader reader = new InputStreamReader(zipFile.getInputStream(entry))) {
+                            info = gson.fromJson(reader, SpringFMModuleInfo.class);
+                        }
+                        URL url = file.toURI().toURL();
+                        SpringFMModule mod = new SpringFMModule(url, info);
+                        System.err.println("Discovered module \"" + info.getName() + "\"");
+                        return mod;
+                    } catch (Exception e) {
+                        System.err.println("Couldn't load module at " + file.getName());
+                        e.printStackTrace();
                         return null;
                     }
-                }).filter(Objects::nonNull).toList().toArray(new URL[0]);
-        System.err.println("Discovered " + moduleURLs.length + " modules");
+                }).toList();
+        System.err.println("Discovered " + modules.size() + " modules.");
 
-        moduleLoader = new URLClassLoader(moduleURLs, getClass().getClassLoader());
+        moduleLoader = new URLClassLoader(modules.stream().map(mod -> mod.getUrl()).toList().toArray(new URL[0]),
+                getClass().getClassLoader());
 
         System.err.println("Loading services...");
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
@@ -179,6 +195,10 @@ public class ConfigurationReader {
         return MessageDigest.getInstance("md5");
     }
 
+    public List<SpringFMModule> getModules() {
+        return modules;
+    }
+
     private static void saveDefaultConfig() throws IOException {
         MainConfiguration config = new MainConfiguration(
                 Map.of("default",
@@ -195,7 +215,7 @@ public class ConfigurationReader {
                                         Map.of("name", "Broadcast AM", "lowerFrequency", 1e6f, "upperFrequency", 10e6f,
                                                 "frequencyStep", 1e3f),
                                         new AudioFormatConfiguration(44.1e3f, 1))))),
-                false, new ServerConfiguration("0.0.0.0", 8080));
+                false, new ServerConfiguration("0.0.0.0", 8080), "modules");
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
         }
