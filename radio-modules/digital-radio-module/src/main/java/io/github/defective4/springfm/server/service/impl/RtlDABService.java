@@ -10,6 +10,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -92,6 +93,8 @@ public class RtlDABService implements DigitalRadioService {
     private Future<?> etiTask;
 
     private final AudioFormat format;
+    private final int gain;
+
     private DataGenerator generator;
 
     private final String name;
@@ -114,7 +117,18 @@ public class RtlDABService implements DigitalRadioService {
             @ServiceArgument(name = "etiCmdlinePath", defaultValue = "eti-cmdline-rtlsdr") String etiCmdlinePath,
             @ServiceArgument(name = "channel") String channel,
             @ServiceArgument(name = "dablinPath", defaultValue = "dablin") String dablinPath,
-            @ServiceArgument(name = "soxPath", defaultValue = "sox") String soxPath, AudioFormat format) {
+            @ServiceArgument(name = "soxPath", defaultValue = "sox") String soxPath,
+            @ServiceArgument(name = "gain", defaultValue = "auto") String gain, AudioFormat format) {
+        int gainVal;
+        if (gain.equalsIgnoreCase("auto")) {
+            gainVal = -1;
+        } else
+            try {
+                gainVal = Integer.parseInt(gain);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid gain value. It must either be an integer, or \"auto\"");
+            }
+        this.gain = gainVal;
         this.etiCmdlinePath = etiCmdlinePath;
         this.dablinPath = dablinPath;
         this.soxPath = soxPath;
@@ -202,7 +216,13 @@ public class RtlDABService implements DigitalRadioService {
     public void start() throws IOException {
         if (isStarted()) throw new IllegalStateException("Already started");
         stop();
-        etiProcess = ScriptUtils.startProcess(etiCmdlinePath, "-C", channel);
+        Object[] etiArgs = new String[] { "-C", channel, "-Q" };
+        if (gain >= 0) {
+            etiArgs = Arrays.copyOf(etiArgs, etiArgs.length + 1);
+            etiArgs[etiArgs.length - 2] = "-G";
+            etiArgs[etiArgs.length - 1] = gain;
+        }
+        etiProcess = ScriptUtils.startProcess(etiCmdlinePath, etiArgs);
         tuneDablin(stationIndex);
         soxProcess = ScriptUtils.startProcess(soxPath, "-t", "raw", "-r", "48k", "-c", "2", "-ef", "-b", "32", "-",
                 "-t", "raw", "-r", "48k", "-c", "2", "-es", "-b", "16", "-");
