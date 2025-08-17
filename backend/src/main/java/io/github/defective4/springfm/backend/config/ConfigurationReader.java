@@ -11,16 +11,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -45,6 +50,7 @@ public class ConfigurationReader {
     private static final File CONFIG_FILE = new File("springfm.json");
     private final MainConfiguration config;
     private final Gson gson = new Gson();
+    private ClassLoader moduleLoader;
     private final Map<String, RadioProfile> profiles = new LinkedHashMap<>();
 
     public ConfigurationReader() throws IOException, ClassNotFoundException, NoSuchMethodException, SecurityException,
@@ -53,15 +59,31 @@ public class ConfigurationReader {
         try (Reader reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
             config = gson.fromJson(reader, MainConfiguration.class);
         }
+
+        System.err.println("Loading modules...");
+        File modulesDir = new File("modules"); // TODO config
+        URL[] moduleURLs = Arrays.stream(modulesDir.listFiles()).filter(file -> file.getName().endsWith(".jar"))
+                .map(file -> {
+                    try {
+                        return file.toURI().toURL();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                }).filter(Objects::nonNull).toList().toArray(new URL[0]);
+        System.err.println("Discovered " + moduleURLs.length + " modules");
+
+        moduleLoader = new URLClassLoader(moduleURLs, getClass().getClassLoader());
+
         System.err.println("Loading services...");
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
             String name = entry.getKey();
             ProfileConfiguration profileConfig = entry.getValue();
             List<RadioService> services = new ArrayList<>();
             for (ServiceConfiguration svcConfig : profileConfig.getServices()) {
-                Class<? extends RadioService> serviceClass = (Class<? extends RadioService>) Class
-                        .forName(svcConfig.getClassName().contains(".") ? svcConfig.getClassName()
-                                : "io.github.defective4.springfm.server.service.impl." + svcConfig.getClassName());
+                Class<? extends RadioService> serviceClass = (Class<? extends RadioService>) Class.forName(
+                        svcConfig.getClassName().contains(".") ? svcConfig.getClassName()
+                                : "io.github.defective4.springfm.server.service.impl." + svcConfig.getClassName(),
+                        true, moduleLoader);
                 Constructor<?> constructor = serviceClass.getConstructors()[0];
                 Parameter[] params = constructor.getParameters();
                 Object[] args = new Object[params.length];
@@ -120,6 +142,7 @@ public class ConfigurationReader {
             System.err.println("Loaded " + profiles.size() + " profiles with "
                     + profiles.values().stream().mapToInt(p -> p.getServices().size()).sum() + " total services.");
         }
+
     }
 
     public Map<String, RadioProfile> getAvailableProfiles() {
