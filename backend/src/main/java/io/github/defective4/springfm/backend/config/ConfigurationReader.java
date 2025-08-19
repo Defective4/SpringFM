@@ -71,8 +71,10 @@ public class ConfigurationReader {
             modules.add(new SpringFMModule(null, gson.fromJson(reader, SpringFMModuleInfo.class)));
         }
 
-        modules.addAll(Arrays.stream(modulesDir.listFiles()).filter(mod -> mod.getName().toLowerCase().endsWith(".jar"))
-                .map(file -> {
+        if (!modulesDir.exists()) modulesDir.mkdirs();
+
+        if (modulesDir.isDirectory()) modules.addAll(Arrays.stream(modulesDir.listFiles())
+                .filter(mod -> mod.getName().toLowerCase().endsWith(".jar")).map(file -> {
                     try (ZipFile zipFile = new ZipFile(file)) {
                         ZipEntry entry = zipFile.getEntry("springfm-module.json");
                         if (entry == null || entry.isDirectory())
