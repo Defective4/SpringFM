@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -66,6 +67,7 @@ public class ConfigurationReader {
 
         System.err.println("Loading modules...");
         File modulesDir = new File(config.getModuleDirectory());
+        File libsDir = new File(config.getLibsDirectory());
 
         try (Reader reader = new InputStreamReader(getClass().getResourceAsStream("/springfm-module.json"))) {
             modules.add(new SpringFMModule(null, gson.fromJson(reader, SpringFMModuleInfo.class)));
@@ -93,11 +95,22 @@ public class ConfigurationReader {
                         return null;
                     }
                 }).toList());
-        System.err.println("Discovered " + modules.size() + " modules.");
 
-        moduleLoader = new URLClassLoader(
-                modules.stream().map(mod -> mod.getUrl()).filter(Objects::nonNull).toList().toArray(new URL[0]),
-                getClass().getClassLoader());
+        List<URL> urls = new ArrayList<>();
+        if (libsDir.isDirectory()) urls.addAll(
+                Arrays.stream(libsDir.listFiles()).filter(f -> f.getName().toLowerCase().endsWith(".jar")).map(f -> {
+                    try {
+                        return f.toURI().toURL();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                }).filter(Objects::nonNull).toList());
+        if (!urls.isEmpty()) System.err.println("Discovered " + urls.size() + " libraries.");
+        urls.addAll(modules.stream().map(mod -> mod.getUrl()).filter(Objects::nonNull).toList());
+
+        if (!modules.isEmpty()) System.err.println("Discovered " + modules.size() + " modules.");
+
+        moduleLoader = new URLClassLoader(urls.toArray(new URL[0]), getClass().getClassLoader());
 
         System.err.println("Loading services...");
         for (Entry<String, ProfileConfiguration> entry : config.getProfiles().entrySet()) {
@@ -241,7 +254,7 @@ public class ConfigurationReader {
                                         Map.of("name", "Broadcast AM", "lowerFrequency", 1e6f, "upperFrequency", 10e6f,
                                                 "frequencyStep", 1e3f),
                                         new AudioFormatConfiguration(44.1e3f, 1))))),
-                false, new ServerConfiguration("0.0.0.0", 8080), "modules");
+                false, new ServerConfiguration("0.0.0.0", 8080), "modules", "libs");
         try (Writer writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
             new GsonBuilder().setPrettyPrinting().create().toJson(config, writer);
         }

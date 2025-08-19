@@ -5,16 +5,21 @@ import java.util.Map;
 
 public class MainConfiguration {
     private final boolean debug;
-    private final String moduleDirectory;
+    private final String moduleDirectory, libsDirectory;
     private final Map<String, ProfileConfiguration> profiles;
     private final ServerConfiguration server;
 
     public MainConfiguration(Map<String, ProfileConfiguration> profiles, boolean debug, ServerConfiguration server,
-            String moduleDirectory) {
+            String moduleDirectory, String libsDirectory) {
+        this.libsDirectory = libsDirectory;
         this.profiles = profiles;
         this.debug = debug;
         this.server = server;
         this.moduleDirectory = moduleDirectory;
+    }
+
+    public String getLibsDirectory() {
+        return libsDirectory == null ? "libs" : libsDirectory;
     }
 
     public String getModuleDirectory() {
