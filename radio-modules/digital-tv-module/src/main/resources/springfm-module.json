@@ -1,0 +1,10 @@
+{
+    "name": "Digital television services for SpringFM",
+    "version": "${project.version}",
+    "description": [
+        "Provides the following additional additional radio services:",
+        "- TSDuck ts processor service, able to process digital tv signals and pass them to ffmpeg",
+        "",
+        "Services in this module depend on TSDuck and FFmpeg"
+    ]
+}
