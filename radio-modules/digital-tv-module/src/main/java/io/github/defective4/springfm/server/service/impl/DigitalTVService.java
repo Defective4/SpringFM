@@ -20,6 +20,7 @@ import javax.sound.sampled.AudioFormat;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 
 import io.github.defective4.springfm.server.packet.DataGenerator;
 import io.github.defective4.springfm.server.service.DigitalRadioService;
@@ -100,19 +101,24 @@ public class DigitalTVService implements DigitalRadioService {
     private Future<?> ffmpegTask;
     private final AudioFormat format;
     private DataGenerator generator;
+    private final List<Object> ignoredStations;
     private final String name;
+    private final int probeTime;
     private final List<TVProgram> programs = new ArrayList<>();
     private final RateLimiter rateLimiter;
     private final List<ServiceEntry> services;
     private int station;
+
     private InputStream tsInput;
     private Process tsp;
-
     private Future<?> tsReceiverTask;
 
     public DigitalTVService(@ServiceArgument(defaultValue = "Digital TV", name = "name") String name,
-            @ServiceArgument(name = "services") JsonArray serviceDefs, AudioFormat format) {
+            @ServiceArgument(name = "services") JsonArray serviceDefs,
+            @ServiceArgument(name = "ignoredStations") JsonArray ignoredStations,
+            @ServiceArgument(name = "probeTime", defaultValue = "10") Double probeTime, AudioFormat format) {
         this.name = name;
+        this.probeTime = (int) (double) probeTime;
         this.format = format;
         Gson gson = new Gson();
         List<ServiceEntry> services = new ArrayList<>();
@@ -122,6 +128,13 @@ public class DigitalTVService implements DigitalRadioService {
                 throw new IllegalArgumentException("One of defined services is missing a sourceType parameter");
             services.add(entry);
         }
+        List<Object> ignoredStationsList = new ArrayList<>();
+        for (JsonElement element : ignoredStations) if (element instanceof JsonPrimitive pr) if (pr.isNumber()) {
+            ignoredStationsList.add(pr.getAsInt());
+        } else {
+            ignoredStationsList.add(pr.getAsString());
+        }
+        this.ignoredStations = Collections.unmodifiableList(ignoredStationsList);
         this.services = Collections.unmodifiableList(services);
         rateLimiter = new RateLimiter(
                 (int) (format.getSampleRate() * (format.getSampleSizeInBits() / 8) * format.getChannels()));
@@ -162,7 +175,7 @@ public class DigitalTVService implements DigitalRadioService {
             Process process = ScriptUtils.startProcess("tsp", tmpDir,
                     createTspArguments(service, "-P", "filter", "--psi-si", "-O", "file", tsFile.getPath()));
             try {
-                process.waitFor(10, TimeUnit.SECONDS); // TODO timeout config
+                process.waitFor(probeTime, TimeUnit.SECONDS);
             } catch (InterruptedException e) {}
 
             if (!tsFile.isFile()) throw new IOException("Couldn't probe signal on service \"" + service + "\"");
@@ -176,7 +189,9 @@ public class DigitalTVService implements DigitalRadioService {
 
                 for (PATsection section : pat.getPATsections()) {
                     for (Program prog : section.getPrograms()) {
-                        if (prog.getProgram_number() == 0) continue;
+                        if (prog.getProgram_number() == 0 || ignoredStations.contains(prog.getProgram_number())
+                                || ignoredStations.contains(prog.getServiceNameOrNit()))
+                            continue;
                         programs.add(new TVProgram(prog.getProgram_number(), prog.getServiceNameOrNit(), service));
                     }
                 }
