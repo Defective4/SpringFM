@@ -97,7 +97,7 @@ public class ConfigurationReader {
                 }).toList());
 
         List<URL> urls = new ArrayList<>();
-        if (libsDir.isDirectory()) urls.addAll(
+        if (config.isDebug() && libsDir.isDirectory()) urls.addAll(
                 Arrays.stream(libsDir.listFiles()).filter(f -> f.getName().toLowerCase().endsWith(".jar")).map(f -> {
                     try {
                         return f.toURI().toURL();
